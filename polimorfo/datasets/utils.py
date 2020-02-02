@@ -29,7 +29,7 @@ def download_image(url_path):
             img.save(path, "JPEG", optimize=True)
         response.close()
     except Exception as ex:
-        log.debug(f'error processing the url {url} {ex}')
+        log.debug('error processing the url %s' % (url), ex)
 
 
 def process_images(urls_filepath, timeout):
