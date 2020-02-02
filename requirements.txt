@@ -1,6 +1,6 @@
 tqdm==4.42.0
 opencv-python==4.1.2.30
-numpy
+numpy==1.18.1
 lxml
 xmljson
 requests
