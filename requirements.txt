@@ -3,6 +3,4 @@ opencv-python
 numpy
 lxml
 xmljson
-cython
-pycocotools
 requests
