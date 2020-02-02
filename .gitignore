@@ -105,6 +105,7 @@ ENV/
 .vscode/
 
 *.json
+!tests/data/*.json
 *.zip
 *.csv
 

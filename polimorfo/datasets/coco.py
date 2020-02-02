@@ -75,7 +75,7 @@ class Coco():
             if not path.exists():
                 del self.__imgs[idx]
                 count += 1
-        print(f'removed {count} images')
+        print('removed %d images' % (count))
 
     def get_categories(self, only_name_id=False):
         """return the dataset categories
