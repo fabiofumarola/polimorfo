@@ -1,5 +1,5 @@
 =========
-polimorfo
+polimòrfo
 =========
 
 
@@ -20,7 +20,7 @@ polimorfo
 
 
 
-Polimorfo (πολύμορϕος, comp. di πολυ- «poli-» e μορϕή «forma») is a dataset loader and converter library for object detection segmentation and classification.
+Polimòrfo (πολύμορϕος, comp. di πολυ- «poli-» e μορϕή «forma») is a dataset loader and converter library for object detection segmentation and classification.
 The goal of the project is to create a library able to process dataset in format:
 
 .. _COCO: http://cocodataset.org/#format-data
