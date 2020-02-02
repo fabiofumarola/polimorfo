@@ -8,15 +8,24 @@ from . import utils
 log = logging.getLogger(__name__)
 
 class Coco():
+    """Process the dataset in COCO format
+    """
+    def __init__(self, annotations_path, images_folder='images'):
+        """Load a dataset from a .json dataset
+        
+        Arguments:
+            annotations_path {[type]} -- [description]
 
-    def __init__(self, annotations_path):
+        Keyword Arguments:
+            images_folder {str} -- the folder wheer the images are saved (default: {'images'})
+        """
         self.__annotations_path = Path(annotations_path)
         with self.__annotations_path.open() as f:
             self.__content = json.load(f)
         assert set(self.__content.keys()) == {
             'annotations', 'categories', 'images', 'info', 'licenses'}, 'Not correct file format'
 
-        self.__image_folder = self.__annotations_path.parent / 'images'
+        self.__image_folder = self.__annotations_path.parent / images_folder
         self.__index_data()
 
     def __index_data(self):
@@ -39,9 +48,16 @@ class Coco():
 
     @property
     def to_keep_id_categories(self):
+        """return the category ids filtered from the dataset
+        
+        Returns:
+            set -- the set of the categories idx filtered
+        """
         return self.__to_keep_id_categories
 
     def download_images(self):
+        """Download the images from the urls
+        """
         self.__image_folder.mkdir(exist_ok=True)
         urls_filepath = [
             (img['coco_url'],
@@ -51,6 +67,8 @@ class Coco():
         self.cleanup_missing_images()
 
     def cleanup_missing_images(self):
+        """remove missing images
+        """
         count = 0
         for idx, img in self.__imgs.items():
             path = self.__image_folder / img['file_name']
@@ -75,6 +93,11 @@ class Coco():
             return list(self.__id_categories.values())
 
     def categories_images_count(self):
+        """get the number of images per category
+        
+        Returns:
+            list -- a list of tuples category number of images
+        """
         results = list()
         for cat_id, imgs_id in self.__catid_to_imgid.items():
             cat_name = self.__id_categories[cat_id]['name']
@@ -83,6 +106,11 @@ class Coco():
         return results
 
     def categories_annotations_count(self):
+        """the number of annotations per category
+        
+        Returns:
+            list -- a list of tuples (category_name, number of annotations)
+        """
         results = list()
         for cat_id, imgs_id in self.__catid_to_imgid.items():
             cat_name = self.__id_categories[cat_id]['name']
