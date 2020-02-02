@@ -1,0 +1,4 @@
+
+
+class Polygon:
+    pass
