@@ -4,7 +4,7 @@ import requests
 from io import BytesIO
 import multiprocessing
 from multiprocessing.dummy import Pool
-from tqdm import tqdm_notebook as tqdm
+from tqdm.autonotebook import tqdm
 import logging
 
 log = logging.getLogger(__name__)

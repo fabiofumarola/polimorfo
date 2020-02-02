@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 from collections import defaultdict
 import logging
 from . import utils
