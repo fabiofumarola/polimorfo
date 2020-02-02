@@ -5,3 +5,4 @@ lxml
 xmljson
 pycocotools
 requests
+cython
