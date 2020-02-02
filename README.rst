@@ -23,11 +23,21 @@ polimorfo
 Polimorfo (πολύμορϕος, comp. di πολυ- «poli-» e μορϕή «forma») is a dataset loader and converter library for object detection segmentation and classification.
 The goal of the project is to create a library able to process dataset in format:
 
-- [coco]
-- [pascal voc]
-- [google open images]
+.. _COCO: http://cocodataset.org/#format-data
+.. _`Pascal VOC`: http://host.robots.ox.ac.uk/pascal/VOC/
+.. _`Google Open Images`: https://storage.googleapis.com/openimages/web/download.html
+
+- COCO_: Common Objects in Context
+- `Pascal VOC`_: Visual Object Classes Challenge
+- `Google Open Images`_: Object Detection and Segmentation dataset released by Google
 
 and transform these dataset into a common format (COCO).
+
+Moreover, the library offers utilies to handle (load, convert, store and transform) the various type of annotations.
+This is important when you need to:
+- convert mask to polygons
+- store mask in a efficient format
+- convert mask/poygons into bounding boxes
 
 
 * Free software: Apache Software License 2.0
