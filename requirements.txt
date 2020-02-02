@@ -4,3 +4,4 @@ numpy
 lxml
 xmljson
 requests
+Pillow
