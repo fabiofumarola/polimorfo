@@ -1,5 +1,5 @@
 tqdm==4.42.1
-opencv-python==4.1.2.32
+opencv-python==4.2.0.32
 numpy==1.18.1
 lxml==4.5.0
 xmljson==0.2.0
