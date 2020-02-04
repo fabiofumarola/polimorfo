@@ -47,7 +47,9 @@ This is important when you need to:
 Features
 --------
 
-* TODO
+
+TODO
+=====
 
 - [X] Coco dataset
 - [ ] download coco datasets for train and val
