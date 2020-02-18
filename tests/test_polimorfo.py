@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-
 """Tests for `polimorfo` package."""
 
 import pytest
-
 
 from polimorfo import polimorfo
 

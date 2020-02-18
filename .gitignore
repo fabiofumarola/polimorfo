@@ -112,3 +112,4 @@ ENV/
 .DS_Store
 
 notebooks/tests/
+tests/data/datasets

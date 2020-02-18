@@ -7,12 +7,13 @@ from . import utils
 
 log = logging.getLogger(__name__)
 
+
 class Coco():
     """Process the dataset in COCO format
     """
     def __init__(self, annotations_path, images_folder='images'):
         """Load a dataset from a .json dataset
-        
+
         Arguments:
             annotations_path {[type]} -- [description]
 
@@ -23,7 +24,8 @@ class Coco():
         with self.__annotations_path.open() as f:
             self.__content = json.load(f)
         assert set(self.__content.keys()) == {
-            'annotations', 'categories', 'images', 'info', 'licenses'}, 'Not correct file format'
+            'annotations', 'categories', 'images', 'info', 'licenses'
+        }, 'Not correct file format'
 
         self.__image_folder = self.__annotations_path.parent / images_folder
         self.__index_data()
@@ -37,7 +39,8 @@ class Coco():
         for img in tqdm(self.__content['images'], desc='load images'):
             self.__imgs[img['id']] = img
 
-        for ann in tqdm(self.__content['annotations'], desc='load annotations'):
+        for ann in tqdm(self.__content['annotations'],
+                        desc='load annotations'):
             self.__imgid_to_anns[ann['image_id']].append(ann)
             self.__catid_to_imgid[ann['category_id']].add(ann['image_id'])
 
@@ -49,7 +52,7 @@ class Coco():
     @property
     def to_keep_id_categories(self):
         """return the category ids filtered from the dataset
-        
+
         Returns:
             set -- the set of the categories idx filtered
         """
@@ -59,10 +62,9 @@ class Coco():
         """Download the images from the urls
         """
         self.__image_folder.mkdir(exist_ok=True)
-        urls_filepath = [
-            (img['coco_url'],
-             self.__image_folder /
-             img['file_name']) for img in self.__imgs.values()]
+        urls_filepath = [(img['coco_url'],
+                          self.__image_folder / img['file_name'])
+                         for img in self.__imgs.values()]
         utils.process_images(urls_filepath, 1)
         self.cleanup_missing_images()
 
@@ -87,14 +89,16 @@ class Coco():
             [type] -- [description]
         """
         if only_name_id:
-            return {idx: cat['name']
-                    for idx, cat in self.__id_categories.items()}
+            return {
+                idx: cat['name']
+                for idx, cat in self.__id_categories.items()
+            }
         else:
             return list(self.__id_categories.values())
 
     def categories_images_count(self):
         """get the number of images per category
-        
+
         Returns:
             list -- a list of tuples category number of images
         """
@@ -107,7 +111,7 @@ class Coco():
 
     def categories_annotations_count(self):
         """the number of annotations per category
-        
+
         Returns:
             list -- a list of tuples (category_name, number of annotations)
         """
@@ -116,10 +120,10 @@ class Coco():
             cat_name = self.__id_categories[cat_id]['name']
             annotations = list()
             for img_id in imgs_id:
-                annotations.extend(
-                    [ann for ann in self.__imgid_to_anns[img_id]
-                        if ann['category_id'] == cat_id]
-                )
+                annotations.extend([
+                    ann for ann in self.__imgid_to_anns[img_id]
+                    if ann['category_id'] == cat_id
+                ])
             results.append((cat_name, len(annotations)))
         results = sorted(results, key=lambda x: x[1], reverse=True)
         return results
@@ -155,7 +159,9 @@ class Coco():
         """
         if len(self.__to_keep_id_categories):
             filtered_categories = [
-                cat for idx, cat in self.__id_categories.items() if idx in self.__to_keep_id_categories]
+                cat for idx, cat in self.__id_categories.items()
+                if idx in self.__to_keep_id_categories
+            ]
             filtered_annotations = list()
             filtered_images = list()
 
@@ -167,8 +173,10 @@ class Coco():
                         filtered_images.append(self.__imgs[img_id])
                         # filter the annotations wrt the categories selected
                         filtered_img_annotations = [
-                            ann for ann in self.__imgid_to_anns[img_id] if ann['category_id'] == cat]
-                        # add the filtered annotations 
+                            ann for ann in self.__imgid_to_anns[img_id]
+                            if ann['category_id'] == cat
+                        ]
+                        # add the filtered annotations
                         filtered_annotations.extend(filtered_img_annotations)
         else:
             filtered_categories = self.get_categories()
@@ -193,5 +201,11 @@ class Coco():
         with open(path, 'w') as fp:
             json.dump(data, fp)
 
+    @classmethod
+    def train_dataset(cls, folder='.'):
+        """Download the Coco annotations and save them to the
 
-
+        Keyword Arguments:
+            folder {str} -- [description] (default: {'.'})
+        """
+        pass
