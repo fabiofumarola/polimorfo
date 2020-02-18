@@ -111,7 +111,7 @@ Tips
 
 To run a subset of tests::
 
-$ pytest tests.test_polimorfo
+$ pytest
 
 
 Deploying
