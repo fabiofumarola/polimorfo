@@ -10,10 +10,8 @@ deploy:
   ski_existing: true
   provider: pypi
   distributions: sdist bdist_wheel
-  user: fabiofumarola
-  password:
-    secure: gafqo8aF+nK2zMEQBsy19D811T297ftb0MQdZFbDXCUrjodRVOUyeA1M2k+5FGoWsPjDxUcv8ItG4UKkEQG3R22Uymu4QQI/vu80JbWLv4zpk10ok90q04T1co6TTqiaVPGS4B2NAIc5UlP/EkWFcs/psPC4/97zw+b8vZIb1pxMdVhe3zhT+kYsUOnI+VFLmEJDS5kJhfcNLYaCL2ch9n/cnuJ3xgyk+ezhrNDVcoM6k0j/cPzxc9X5FWXaBbRWV2tg1P5mmqSuG2QNgLJyHJkUlJhIFpH3B2GiXcvq/rXJxpF10tAZy7dWjW/IguMXk2fMGZsqWbe2OU2TaWCCdObP7Eb7kr5mKSdJ9nMIJfsEqvdZJb8L0fCry89kRwOcDGjVrKFNJFLawGRVajwmot7YWV53/fkAP2CCmnfB7CQrzGsEFjJyQRrrYycctcaKnFlFflmFcFB2t+Jv7b3P3oqwSUMDxAUfFhwzcYPo2BxvANYiOnejSmgvwQGNHNwDhjOqUsOijbL/BAhOrrW+J92pqHI4m51YJB4Pu4/JI2cKs4YyGd7ejler5aTXuuy1lP5AXFGN81bYT+vOCcjU9IdJAkrwXMjpajVATGM/9qnfI2u6DJpsdH02GZPyA0G+OaoMkbBsk1yz68Fp7HxpPjLVxENetpb3mP3fBgnzDEc=
+  user: "__token__"
+  password: pypi-AgEIcHlwaS5vcmcCJDNkMmI4MjNkLTRkNDUtNDc4ZS05Mzk2LTk3ZjUyNjM4ODA4MwACJXsicGVybWlzc2lvbnMiOiAidXNlciIsICJ2ZXJzaW9uIjogMX0AAAYgvAHUnkDRRgimTKf7Zr7ylAvsSIYRCQcXJ0RNzehwxRk
   on:
     tags: true
     repo: fabiofumarola/polimorfo
-    python: 3.8
