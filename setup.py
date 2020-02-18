@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """The setup script."""
 
 from setuptools import setup, find_packages
@@ -16,12 +15,14 @@ with open('requirements.txt', 'r') as fh:
 with open('requirements_dev.txt', 'r') as fh:
     test_requirements = fh.read().split('\n')
 
-setup_requirements = ['pytest-runner', ]
+setup_requirements = [
+    'pytest-runner',
+]
 
 setup(
     author="Fabio Fumarola",
     author_email='fabiofumarola@gmail.com',
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
@@ -33,7 +34,8 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    description="a dataset loader and converter for object detection segmentation and classification",
+    description=
+    "a dataset loader and converter for object detection segmentation and classification",
     entry_points={
         'console_scripts': [
             'polimorfo=polimorfo.cli:main',

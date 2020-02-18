@@ -110,3 +110,6 @@ ENV/
 *.csv
 
 .DS_Store
+
+notebooks/tests/
+tests/data/datasets
