@@ -51,7 +51,8 @@ lint: ## check style with flake8
 	flake8 polimorfo tests
 
 format: ## format the code
-	autopep8 -ri --max-line-length 80 --aggressive .
+	# autopep8 -ri --max-line-length 80 --aggressive .
+	yapf -ri polimorfo tests
 
 test: ## run tests quickly with the default Python
 	pytest
