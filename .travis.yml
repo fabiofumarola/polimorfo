@@ -1,11 +1,13 @@
 language: python
 python:
-- 3.8
-- 3.7
-- 3.6
+  - 3.8
+  - 3.7
+  - 3.6
 install: pip install -U tox-travis
 script: tox
 deploy:
+  skip_cleanup: true
+  ski_existing: true
   provider: pypi
   distributions: sdist bdist_wheel
   user: fabiofumarola
