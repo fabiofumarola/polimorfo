@@ -4,6 +4,7 @@ Welcome to polimorfo's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   :glob:
 
    readme
    installation
@@ -12,6 +13,7 @@ Welcome to polimorfo's documentation!
    contributing
    authors
    history
+   tutorials/*
 
 Indices and tables
 ==================

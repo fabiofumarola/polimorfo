@@ -9,6 +9,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 def download_image(url_path):
     """download an image and save to the destination path
 

@@ -51,7 +51,8 @@ lint: ## check style with flake8
 	flake8 polimorfo tests
 
 format: ## format the code
-	autopep8 -ri --max-line-length 80 --aggressive .
+	# autopep8 -ri --max-line-length 80 --aggressive .
+	yapf -ri polimorfo tests
 
 test: ## run tests quickly with the default Python
 	pytest
@@ -66,8 +67,13 @@ coverage: ## check code coverage quickly with the default Python
 	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
+	cp README.rst docs/readme.rst
+	cp -rf images docs
 	rm -f docs/polimorfo.rst
 	rm -f docs/modules.rst
+	mkdir -p docs/tutorials
+	cp -rf notebooks/*.ipynb docs/tutorials
+	jupyter nbconvert docs/tutorials/*.ipynb --to rst
 	sphinx-apidoc -o docs/ polimorfo
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
