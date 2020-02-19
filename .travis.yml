@@ -7,13 +7,11 @@ install: pip install -U tox-travis
 script: tox
 deploy:
   skip_cleanup: true
-  ski_existing: true
+  skip_existing: true
   provider: pypi
   distributions: sdist bdist_wheel
-  user: __token__
-  password:
-    secure: A1eFk46ZVyOOoN3/85qRdj+hldGWMOWwXz1CZMZ24M1f+rB5KwFVyD3p7kQSvDtitn/ZFRuw9sxX0GEQswOGc6YomSOz7myByBzPrFoFKVYPoP1pPV/bCzZqh1uzB8jbR12M8iI+O33DHDX2e3LFgtwv+NDWkM9DYiXOxIIrr0No4v4hsO2vMULVeVe3XxjHGnEjKpqzvxtlAarAwdaB9xNB0+3yPWcjz/ps8qHlq4we6oOSUv4SlVOKHYZ4/n4KD+3pZCLgRCjTIJmoXP4Cm4zr3BaNeVPO0eBrk83jHsl3jNkWj1AaRkFaiSnBIUdpGHcSsRVFdkOud9KYgWospw4GvYhNzUTbWCgtB4BkcxxVBeXzFRirYLpLUCc62aUZ6qW32B6hh6zhMgdQTQy0rrfjngIeTSZCw4GzEF1Aby3jEbCevo1ufwmtoH7XNiw/Gni3HyK0Ycz8/3gQhP3ptwpjcoJjlrbAL84xJR6zOBeIzaHur72r/Zhv3HUDhoq1tnuDtzY7ai7S3RyFSAeEbt37lxzIUe+eGoZ9/2yt8hTDgBaltex8W0+wsvMmrtnCezMpgs0wvY7vSJ/2szlNa3o9yM25uf1axtc+H/NFfky05MVtw42ab4KPALHJlfwqa+j2FvNR4K0csAvZ/UEhQGCdNUhfjdlHFZvyTybuRPg=
+  user: "__token__"
+  password: pypi-AgEIcHlwaS5vcmcCJDNkMmI4MjNkLTRkNDUtNDc4ZS05Mzk2LTk3ZjUyNjM4ODA4MwACJXsicGVybWlzc2lvbnMiOiAidXNlciIsICJ2ZXJzaW9uIjogMX0AAAYgvAHUnkDRRgimTKf7Zr7ylAvsSIYRCQcXJ0RNzehwxRk
   on:
     tags: true
     repo: fabiofumarola/polimorfo
-    python: 3.8
