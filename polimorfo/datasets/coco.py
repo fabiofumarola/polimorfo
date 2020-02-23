@@ -51,6 +51,11 @@ class Coco():
         self.__to_keep_id_categories = {}
 
     def __len__(self):
+        """the number of the images in the dataset
+        
+        Returns:
+            [int] -- the number of images in the dataset
+        """
         return len(self.__imgs)
 
     @property
