@@ -16,13 +16,21 @@ def __get_confirm_token(response):
     return None
 
 
-def __save_response_content(response, destination):
+def __save_response_content(response: requests.Response, destination: Path):
+    """save the content of the request as file
+    
+    Arguments:
+        response {requests.Response} -- the response to download
+        destination {Path} -- the destination path
+    """
     chunk_size = 32768
 
     num_elems = math.ceil(256483864 / chunk_size)
 
     with open(destination, "wb") as f:
-        for chunk in tqdm(response.iter_content(chunk_size), total=num_elems):
+        for chunk in tqdm(response.iter_content(chunk_size),
+                          total=num_elems,
+                          desc='saving file {}'.format(destination.name)):
             if chunk:  # filter out keep-alive new chunks
                 f.write(chunk)
 
@@ -81,7 +89,7 @@ def download_url(url: str, dst_path: str) -> Tuple[Path, int]:
         for chunk in tqdm(req.iter_content(chunk_size=chunk_size),
                           total=num_bars,
                           unit='KB',
-                          desc=dst_path.name,
+                          desc='downloading {}'.format(dst_path.name),
                           leave=True):
             fp.write(chunk)
     return file_size
@@ -149,7 +157,7 @@ def download_file(name: str,
     """Downloads a file frolsm a URL if it not already saved
 
     Arguments:
-        name {str} -- the name of the file
+        name {str} -- the name of the file (e.g. )
         url {str} -- the url of the file or the idx of the file in case files are download from google drive
 
     Keyword Arguments:
@@ -166,13 +174,16 @@ def download_file(name: str,
              'tar.gz'])), 'selected extract=True with a non archive file'
 
     cache_subdir = Path(cache_dir) / cache_subdir
+    cache_subdir = cache_subdir.expanduser()
     cache_subdir.mkdir(parents=True, exist_ok=True)
+    # print('saving data in path {}'.format(cache_subdir.absolute()))
     file_path = cache_subdir / name
 
-    if url.startswith('http'):
-        download_url(url, file_path)
-    else:
-        download_from_gdrive(url, file_path)
+    if not file_path.exists():
+        if url.startswith('http'):
+            download_url(url, file_path)
+        else:
+            download_from_gdrive(url, file_path)
 
     if extract:
         files = extract_archive(file_path, cache_subdir)

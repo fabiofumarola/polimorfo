@@ -1,6 +1,8 @@
 from polimorfo.datasets import Coco
 from pytest import fixture
 from pathlib import Path
+import shutil
+import pytest
 
 BASE_PATH = Path(__file__).parent.parent / 'data'
 
@@ -56,3 +58,50 @@ def test_dumps(coco_test):
     data = coco_test.dumps()
     assert len(data['categories']) == 2
     assert len(data['images']) == 1177
+
+
+def test_download_coco2017():
+    train_data, val_data = Coco.download_data(task='object_detection',
+                                              version='2017',
+                                              path='tests/data')
+    assert len(train_data) == 118287
+    assert len(val_data) == 5000
+    print('train data len={}'.format(len(train_data)))
+    print('val data len={}'.format(len(val_data)))
+    shutil.rmtree('tests/data/datasets')
+
+
+def test_download_coco2014():
+    train_data, val_data = Coco.download_data(task='object_detection',
+                                              version='2014',
+                                              path='tests/data')
+
+    assert len(train_data) == 118287
+    assert len(val_data) == 5000
+    print('train data len={}'.format(len(train_data)))
+    print('val data len={}'.format(len(val_data)))
+    shutil.rmtree('tests/data/datasets')
+
+
+def test_download_coco2017_captioning():
+    with pytest.raises(NotImplementedError):
+        Coco.download_data(task='captioning',
+                           version='2017',
+                           path='tests/data')
+
+
+def test_download_coco2017_keypoints():
+    with pytest.raises(NotImplementedError):
+        Coco.download_data(task='keypoints', version='2017', path='tests/data')
+
+
+def test_download_coco2017_wrong_name():
+    with pytest.raises(ValueError):
+        Coco.download_data(task='panoptic', version='2017', path='tests/data')
+
+
+def test_download_coco2017_wrong_year():
+    with pytest.raises(ValueError):
+        Coco.download_data(task='object_detection',
+                           version='2013',
+                           path='tests/data')
