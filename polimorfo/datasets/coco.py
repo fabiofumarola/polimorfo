@@ -3,7 +3,8 @@ import json
 from tqdm.autonotebook import tqdm
 from collections import defaultdict
 import logging
-from . import utils
+from ..utils import datautils, imageutils
+from typing import Tuple
 
 log = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class Coco():
         """Load a dataset from a .json dataset
 
         Arguments:
-            annotations_path {[type]} -- [description]
+                        annotations_path {[type]} -- [description]
 
         Keyword Arguments:
             images_folder {str} -- the folder wheer the images are saved (default: {'images'})
@@ -49,6 +50,9 @@ class Coco():
 
         self.__to_keep_id_categories = {}
 
+    def __len__(self):
+        return len(self.__imgs)
+
     @property
     def to_keep_id_categories(self):
         """return the category ids filtered from the dataset
@@ -65,7 +69,7 @@ class Coco():
         urls_filepath = [(img['coco_url'],
                           self.__image_folder / img['file_name'])
                          for img in self.__imgs.values()]
-        utils.process_images(urls_filepath, 1)
+        imageutils.process_images(urls_filepath, 1)
         self.cleanup_missing_images()
 
     def cleanup_missing_images(self):
@@ -209,3 +213,71 @@ class Coco():
             folder {str} -- [description] (default: {'.'})
         """
         pass
+
+        minicoco_trainval_objecteddetection_url = ''
+
+    coco_2017_trainval_objectdetection_url = 'http://images.cocodataset.org/annotations/annotations_trainval2017.zip'
+
+    coco_2014_trainval_objectdetection_url = 'http://images.cocodataset.org/annotations/annotations_trainval2017.zip'
+
+    @classmethod
+    def download_data(cls,
+                      task='object_detection',
+                      version='2017',
+                      path: str = None) -> Tuple:
+        """Download the coco dataset for object/keypoint detection and image captioning
+        
+        Keyword Arguments:
+            task {str} -- a valid dataset (default: {'object_detection'}), (values: {'object_detection', 'captioning', 'keypoints'})
+            version {str} -- [description] (default: {'2017'})
+            path {str} -- the path to save the file, if not the file is saved the '~/.polimorfo/datasets (default: {None})
+        
+        Raises:
+            NotImplementedError: [description]
+            NotImplementedError: [description]
+        
+        Returns:
+            Tuple[Coco, Coco] -- [description]
+        """
+        if task == 'object_detection':
+            if version == '2017':
+                year = '2017'
+                url = cls.coco_2017_trainval_objectdetection_url
+            elif version == '2014':
+                year = '2014'
+                url = cls.coco_2014_trainval_objectdetection_url
+            else:
+                raise ValueError(
+                    'not valid value {} for year (supported values are 2014,2017'
+                    .format(task))
+
+            if path is not None:
+                paths = datautils.download_file(
+                    'annotations_trainval{}.zip'.format(year),
+                    url,
+                    cache_dir=path)
+            else:
+                paths = datautils.download_file(
+                    'annotations_trainval{}.zip'.format(year), url)
+
+            # get all the files in the folder
+            paths = list(paths[0].glob('*.json'))
+
+            train_coco = None
+            val_coco = None
+            for path in paths:
+                # 2017 is not an error since in the 2014 folder the files are named as 2017
+                if path.name == 'instances_train2017.json':
+                    train_coco = Coco(path)
+                elif path.name == 'instances_val2017.json':
+                    val_coco = Coco(path)
+            return (train_coco, val_coco)
+
+        elif task == 'captioning':
+            raise NotImplementedError()
+
+        elif task == 'keypoints':
+            raise NotImplementedError()
+
+        else:
+            raise ValueError('not valid value {} for task'.format(task))
