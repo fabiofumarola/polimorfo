@@ -11,6 +11,20 @@ log = logging.getLogger(__name__)
 
 class Coco():
     """Process the dataset in COCO format
+        Data Format
+        ---------
+        annotation{
+            "id": int, 
+            "image_id": int, 
+            "category_id": int, 
+            "segmentation": RLE or [polygon], 
+            "area": float, 
+            "bbox": [x,y,width,height],
+            "iscrowd": 0 or 1,
+        }
+        categories[{
+        "id": int, "name": str, "supercategory": str,
+        }]
     """
     def __init__(self, annotations_path, images_folder='images'):
         """Load a dataset from a .json dataset
@@ -171,6 +185,9 @@ class Coco():
                 cat for idx, cat in self.__id_categories.items()
                 if idx in self.__to_keep_id_categories
             ]
+            newidx_oldidx_dict = dict(enumerate(self.__to_keep_id_categories))
+            oldidx_newidx_dict = {v: k for k, v in newidx_oldidx_dict.items()}
+
             filtered_annotations = list()
             filtered_images = list()
 
@@ -181,12 +198,20 @@ class Coco():
                         # append the image
                         filtered_images.append(self.__imgs[img_id])
                         # filter the annotations wrt the categories selected
-                        filtered_img_annotations = [
-                            ann for ann in self.__imgid_to_anns[img_id]
-                            if ann['category_id'] == cat
-                        ]
-                        # add the filtered annotations
-                        filtered_annotations.extend(filtered_img_annotations)
+                        for ann in self.__imgid_to_anns[img_id]:
+                            if ann['category_id'] == cat:
+                                # remap the idx
+                                ann = ann.copy()
+                                ann['category_id'] = oldidx_newidx_dict[
+                                    ann['category_id']]
+                                filtered_annotations.append(ann)
+
+            filtered_categories_remapped = []
+            for cat in filtered_categories:
+                cat = cat.copy()
+                cat['id'] = oldidx_newidx_dict[cat['id']]
+                filtered_categories_remapped.append(cat)
+            filtered_categories = filtered_categories_remapped
         else:
             filtered_categories = self.get_categories()
             filtered_images = self.__content['images']
@@ -206,9 +231,8 @@ class Coco():
         Arguments:
             path {str} -- the path to save the json and the images
         """
-        data = self.dumps()
         with open(path, 'w') as fp:
-            json.dump(data, fp)
+            json.dump(self.dumps(), fp)
 
     @classmethod
     def train_dataset(cls, folder='.'):

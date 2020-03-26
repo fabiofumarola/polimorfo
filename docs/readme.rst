@@ -52,7 +52,7 @@ TODO
 =====
 
 - [X] Coco dataset
-- [ ] download coco datasets for train and val
+- [X] download coco datasets for train and val
 - [ ] add annotations loader and converter
 - [ ] add voc dataset format
 - [ ]

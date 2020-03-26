@@ -19,6 +19,13 @@ This notebook shows how to create a custom dataset starting from COCO>
     import json
     import matplotlib.pyplot as plt
 
+
+.. parsed-literal::
+
+    /Users/fumarolaf/miniconda3/envs/an/lib/python3.7/site-packages/tqdm/autonotebook/__init__.py:14: TqdmExperimentalWarning: Using `tqdm.autonotebook.tqdm` in notebook mode. Use `tqdm.tqdm` instead to force console mode (e.g. in jupyter console)
+      " (e.g. in jupyter console)", TqdmExperimentalWarning)
+
+
 Load the coco dataset. > download the annotations from [coco
 datasets](http://cocodataset.org/#download
 
@@ -176,4 +183,10 @@ We can download the images from the web
 .. parsed-literal::
 
     HBox(children=(IntProgress(value=0, description='download images', max=1366, style=ProgressStyle(description_w…
+
+
+.. parsed-literal::
+
+    
+    removed 0 images
 
