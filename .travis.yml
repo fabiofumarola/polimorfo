@@ -1,8 +1,8 @@
 language: python
 python:
-  - 3.8
-  - 3.7
-  - 3.6
+- 3.8
+- 3.7
+- 3.6
 install: pip install -U tox-travis
 script: tox
 deploy:
@@ -12,7 +12,7 @@ deploy:
   distributions: sdist bdist_wheel
   user: __token__
   password:
-    secure: APT5/kbRKsFpj74u5aePTlhLiI28T1sBSfNpQQZPyr8z1T3aKlnIXUJjk7bAxpe0Zf1673OyayVrhW4rW6sVZ+r9/1zGV3AK0HftiQQPahYBOZffqB/nZ0MPT2Cf6sK3/JCQ8MdgXHTcwIQF/EM+OnJE6xfIXn15iB/oNwli1C4v1k9UIxcLTDB0PhbehNfjx4wtby+mfnZtNaLeNJSW2+TPuo8S2vXId0SrTFOQpY23a/CPiICno9fgbpr25F6FSeTpo7u18m6KKJugNi2byuOer8mkEkMOEPdjkLkQuNDKhqvi2A3SkzFmkkcVmZXIlRlaZgLm1EVANdLaaz9+uj8WzIo8mLPuDIO/W/PFKVVT8j2oYahafsrhp2Dz6Gq1o/g0fo71Xs0iBAFINWijoMvprGnDzMkcRhDUkTkdfBxx1o/62S2OcZ1fqTPKAWgnfgSdXixIVY45hV8aH9tCzmAbyMmxsPUbkP1FCx/KmsElr1GTCkDI2OuffmG3hEdIrSbnwKN90q7x5r3Mpi4FwVIUpunLxwJBGxUjqG/BnL1s4fm049flV6xOwYbV/KNpSgIk6P3YorRHb2sxrnGx3bPxqLRqdYLWAc/dAYD4ksv++ilPjogWxySiA/jQeEQ+JCNqvFVKeQaAxbENKC1XP3D9FJepAr/60YoJpwbcdHE=
+    secure: BPieccLkOHqQGVQPt8z9ijGY8bP1TOHB2XQWzhp6UrWM2UiVg9zeFkJMPLmAl8fePlCufm5GwgmRquilSN6Q2cZTLzEn3QDpxlR4BwbQk5AhWWmWjOq/T12q46O9xTfi6KITyA+RVOkdN++cPZP/joRAtIuvidF0U4iVdpGmxTgzziuBNs9KeLU2m1MkLV76/dIpOUJhTImGsM3xErTwyN3JEEUJ/jIHOmyAJCbb4NEMWBS3vhaqrex/ZOI/YQmK1EO/qvcjfyObq2nHQIFPHwGd7jluqEHVHI7a4O5TxmLytgbhoLOs1sAtqx9fZjp0an5CQmxvsyl1H/pDiBcRbA3yaFBMAalWYXhSdhs4u/VOMpZSAltZqNWMb/0NUaumeS12LpDaGk80OHQxHE0wJ3I2mXiTGY9rY8EK+Lleks5LneT/HbOdlb+DWORwgCdkHa8fatxrP1n/AAbOXMrT3KD33FKHjBIWzANuQLSNZcYmMapYXWNSEAsFF6kVvFvY4nyi4Qy91uOafgw8zL5TSnpV99r5hR0rhlBKOFuEyEQMUKK1q5kmB6X62kIWHx4jkDy71LRnbmprEPKZQkVd3jJe2un1JfpcMEglqAxegogkqhVLV2Kp2ffHWV0VP1LtePcN8LG9rHej0XU/0rakQiLYSm9KeUQYK4jQi43aNb8=
   on:
     tags: true
     repo: fabiofumarola/polimorfo
