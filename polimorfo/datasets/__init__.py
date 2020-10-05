@@ -1,1 +1,1 @@
-from .coco import Coco
+from .coco import CocoDataset

@@ -33,7 +33,7 @@ def download_image(url_path):
         log.debug('error processing the url %s' % (url), ex)
 
 
-def process_images(urls_filepath, timeout):
+def download_images(urls_filepath, timeout):
     parallelism = multiprocessing.cpu_count() // 2
 
     with Pool(parallelism) as pool:

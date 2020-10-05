@@ -10,8 +10,9 @@ deploy:
   skip_existing: true
   provider: pypi
   distributions: sdist bdist_wheel
-  user: "__token__"
-  password: pypi-AgEIcHlwaS5vcmcCJDNkMmI4MjNkLTRkNDUtNDc4ZS05Mzk2LTk3ZjUyNjM4ODA4MwACJXsicGVybWlzc2lvbnMiOiAidXNlciIsICJ2ZXJzaW9uIjogMX0AAAYgvAHUnkDRRgimTKf7Zr7ylAvsSIYRCQcXJ0RNzehwxRk
+  user: __token__
+  password:
+    secure: APT5/kbRKsFpj74u5aePTlhLiI28T1sBSfNpQQZPyr8z1T3aKlnIXUJjk7bAxpe0Zf1673OyayVrhW4rW6sVZ+r9/1zGV3AK0HftiQQPahYBOZffqB/nZ0MPT2Cf6sK3/JCQ8MdgXHTcwIQF/EM+OnJE6xfIXn15iB/oNwli1C4v1k9UIxcLTDB0PhbehNfjx4wtby+mfnZtNaLeNJSW2+TPuo8S2vXId0SrTFOQpY23a/CPiICno9fgbpr25F6FSeTpo7u18m6KKJugNi2byuOer8mkEkMOEPdjkLkQuNDKhqvi2A3SkzFmkkcVmZXIlRlaZgLm1EVANdLaaz9+uj8WzIo8mLPuDIO/W/PFKVVT8j2oYahafsrhp2Dz6Gq1o/g0fo71Xs0iBAFINWijoMvprGnDzMkcRhDUkTkdfBxx1o/62S2OcZ1fqTPKAWgnfgSdXixIVY45hV8aH9tCzmAbyMmxsPUbkP1FCx/KmsElr1GTCkDI2OuffmG3hEdIrSbnwKN90q7x5r3Mpi4FwVIUpunLxwJBGxUjqG/BnL1s4fm049flV6xOwYbV/KNpSgIk6P3YorRHb2sxrnGx3bPxqLRqdYLWAc/dAYD4ksv++ilPjogWxySiA/jQeEQ+JCNqvFVKeQaAxbENKC1XP3D9FJepAr/60YoJpwbcdHE=
   on:
     tags: true
     repo: fabiofumarola/polimorfo
