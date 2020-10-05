@@ -200,6 +200,24 @@ class CocoDataset():
 
         self.reindex()
 
+    def remove_categories(self, idxs: List[int]) -> None:
+        """Remove the categories with the relative annotations
+
+        Args:
+            idxs (List[int]): [description]
+        """
+        for cat_idx in idxs:
+            if cat_idx not in self.cats:
+                continue
+
+            for idx, ann_meta in tqdm(self.anns.items(), 'process annotations'):
+                if ann_meta['category_id'] == cat_idx:
+                    del self.anns[idx]
+
+            del self.cats[cat_idx]
+
+        self.reindex()
+
     def remove_images_without_annotations(self):
         idx_images_with_annotations = {
             ann['image_id'] for ann in self.anns.values()
