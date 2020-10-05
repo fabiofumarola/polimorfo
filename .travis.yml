@@ -1,8 +1,8 @@
 language: python
 python:
-  - 3.8
-  - 3.7
-  - 3.6
+- 3.8
+- 3.7
+- 3.6
 install: pip install -U tox-travis
 script: tox
 deploy:
@@ -10,8 +10,9 @@ deploy:
   skip_existing: true
   provider: pypi
   distributions: sdist bdist_wheel
-  user: "__token__"
-  password: pypi-AgEIcHlwaS5vcmcCJDNkMmI4MjNkLTRkNDUtNDc4ZS05Mzk2LTk3ZjUyNjM4ODA4MwACJXsicGVybWlzc2lvbnMiOiAidXNlciIsICJ2ZXJzaW9uIjogMX0AAAYgvAHUnkDRRgimTKf7Zr7ylAvsSIYRCQcXJ0RNzehwxRk
+  user: __token__
+  password:
+    secure: BPieccLkOHqQGVQPt8z9ijGY8bP1TOHB2XQWzhp6UrWM2UiVg9zeFkJMPLmAl8fePlCufm5GwgmRquilSN6Q2cZTLzEn3QDpxlR4BwbQk5AhWWmWjOq/T12q46O9xTfi6KITyA+RVOkdN++cPZP/joRAtIuvidF0U4iVdpGmxTgzziuBNs9KeLU2m1MkLV76/dIpOUJhTImGsM3xErTwyN3JEEUJ/jIHOmyAJCbb4NEMWBS3vhaqrex/ZOI/YQmK1EO/qvcjfyObq2nHQIFPHwGd7jluqEHVHI7a4O5TxmLytgbhoLOs1sAtqx9fZjp0an5CQmxvsyl1H/pDiBcRbA3yaFBMAalWYXhSdhs4u/VOMpZSAltZqNWMb/0NUaumeS12LpDaGk80OHQxHE0wJ3I2mXiTGY9rY8EK+Lleks5LneT/HbOdlb+DWORwgCdkHa8fatxrP1n/AAbOXMrT3KD33FKHjBIWzANuQLSNZcYmMapYXWNSEAsFF6kVvFvY4nyi4Qy91uOafgw8zL5TSnpV99r5hR0rhlBKOFuEyEQMUKK1q5kmB6X62kIWHx4jkDy71LRnbmprEPKZQkVd3jJe2un1JfpcMEglqAxegogkqhVLV2Kp2ffHWV0VP1LtePcN8LG9rHej0XU/0rakQiLYSm9KeUQYK4jQi43aNb8=
   on:
     tags: true
     repo: fabiofumarola/polimorfo

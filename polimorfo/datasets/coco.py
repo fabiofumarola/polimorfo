@@ -1,15 +1,26 @@
 from pathlib import Path
 import json
-from tqdm.autonotebook import tqdm
+from tqdm import tqdm
 from collections import defaultdict
+from typing import List
 import logging
-from ..utils import datautils, imageutils
-from typing import Tuple
+from PIL import Image
+import numpy as np
+from datetime import datetime
+from typing import Any, List
 
 log = logging.getLogger(__name__)
 
 
-class Coco():
+class UpdateImage():
+    """class used to pass a function to change the file_name path
+    """
+
+    def __call__(self, in_path: str) -> str:
+        pass
+
+
+class CocoDataset():
     """Process the dataset in COCO format
         Data Format
         ---------
@@ -26,43 +37,117 @@ class Coco():
         "id": int, "name": str, "supercategory": str,
         }]
     """
-    def __init__(self, annotations_path, images_folder='images'):
-        """Load a dataset from a .json dataset
 
+    def __init__(self, coco_path: str = None, image_path: str = None):
+        """Load a dataset from a coco .json dataset
         Arguments:
-                        annotations_path {[type]} -- [description]
-
+                        annotations_path {Path} -- Path to coco dataset
         Keyword Arguments:
             images_folder {str} -- the folder wheer the images are saved (default: {'images'})
         """
-        self.__annotations_path = Path(annotations_path)
-        with self.__annotations_path.open() as f:
-            self.__content = json.load(f)
-        assert set(self.__content.keys()) == {
-            'annotations', 'categories', 'images', 'info', 'licenses'
-        }, 'Not correct file format'
+        self.cats = dict()
+        self.imgs = dict()
+        self.anns = dict()
 
-        self.__image_folder = self.__annotations_path.parent / images_folder
-        self.__index_data()
+        self.cat_id = 1
+        self.img_id = 0
+        self.ann_id = 0
 
-    def __index_data(self):
-        self.__imgs = dict()
-        self.__imgid_to_anns = defaultdict(list)
-        self.__catid_to_imgid = defaultdict(set)
-        self.__id_categories = dict()
+        self.info = {
+            "year": datetime.now().year,
+            "version": '1',
+            "description": 'dataset create with polimorfo',
+            "contributor": '',
+            "url": '',
+            "date_created": datetime.now().date().isoformat(),
+        }
 
-        for img in tqdm(self.__content['images'], desc='load images'):
-            self.__imgs[img['id']] = img
+        self.licenses = {}
 
-        for ann in tqdm(self.__content['annotations'],
-                        desc='load annotations'):
-            self.__imgid_to_anns[ann['image_id']].append(ann)
-            self.__catid_to_imgid[ann['category_id']].add(ann['image_id'])
+        if coco_path is not None:
+            with Path(coco_path).open() as f:
+                data = json.load(f)
+            assert set(data) == {
+                'annotations', 'categories', 'images', 'info', 'licenses'
+            }, 'Not correct file format'
 
-        for cat in self.__content['categories']:
-            self.__id_categories[cat['id']] = cat
+            self.info = data['info']
+            self.licenses = data['licenses']
 
-        self.__to_keep_id_categories = {}
+            if image_path is None:
+                self.__image_folder = Path(coco_path).parent / 'images'
+            else:
+                self.__image_folder = Path(image_path)
+
+            for cat_meta in tqdm(data['categories'], desc='load categories'):
+                if cat_meta['id'] > self.cat_id:
+                    self.cat_id = cat_meta['id']
+                self.cats[cat_meta['id']] = cat_meta
+
+            for img_meta in tqdm(data['images'], desc='load images'):
+                if img_meta['id'] > self.img_id:
+                    self.img_id = img_meta['id']
+                self.imgs[img_meta['id']] = img_meta
+
+            for ann_meta in tqdm(data['annotations'], desc='load annotations'):
+                if ann_meta['id'] > self.ann_id:
+                    self.ann_id = ann_meta['id']
+                self.anns[ann_meta['id']] = ann_meta
+
+    def reindex(self):
+        """reindex images and annotations to be zero based and categories one based
+        """
+        old_new_catidx = dict()
+        new_cats = dict()
+        for new_idx, (old_idx, cat_meta) in enumerate(self.cats.items(), 1):
+            old_new_catidx[old_idx] = new_idx
+            cat_meta = cat_meta.copy()
+            cat_meta['id'] = new_idx
+            new_cats[new_idx] = cat_meta
+            self.cat_id = new_idx
+
+        old_new_imgidx = dict()
+        new_imgs = dict()
+        for new_idx, (old_idx, img_meta) in tqdm(enumerate(self.imgs.items()),
+                                                 'reindex images'):
+            old_new_imgidx[old_idx] = new_idx
+            img_meta = img_meta.copy()
+            img_meta['id'] = new_idx
+            new_imgs[new_idx] = img_meta
+            self.img_id = new_idx
+
+        new_anns = dict()
+        for new_idx, (old_idx, ann_meta) in tqdm(enumerate(self.anns.items()),
+                                                 'reindex annotations'):
+            ann_meta = ann_meta.copy()
+            ann_meta['id'] = new_idx
+            ann_meta['category_id'] = old_new_catidx[ann_meta['category_id']]
+            ann_meta['image_id'] = old_new_imgidx[ann_meta['image_id']]
+            new_anns[new_idx] = ann_meta
+            self.ann_id = new_idx
+
+        del self.cats
+        del self.imgs
+        del self.anns
+
+        self.cats = new_cats
+        self.imgs = new_imgs
+        self.anns = new_anns
+
+    def update_image_annotations_path(self, update_images: UpdateImage):
+        """update the images path
+        Args:
+            update_images (UpdateImages): a class with a callable function to change the path
+        """
+
+        for img_meta in tqdm(self.imgs.values()):
+            img_meta['file_name'] = update_images(img_meta['file_name'])
+
+    def compute_area(self):
+        """compute the area of the annotations
+        """
+        for ann in tqdm(self.anns.values(), desc='process images'):
+            ann['area'] = ann['bbox'][2] * ann['bbox'][3]
 
     def __len__(self):
         """the number of the images in the dataset
@@ -70,243 +155,287 @@ class Coco():
         Returns:
             [int] -- the number of images in the dataset
         """
-        return len(self.__imgs)
+        return len(self.imgs)
 
-    @property
-    def to_keep_id_categories(self):
-        """return the category ids filtered from the dataset
+    def merge_categories(self, cat_to_merge: List[str], new_cat: str):
+        """ Merge two or more categories labels to a new single category.
+            Remove from __content the category to be merged and update
+            annotations cat_ids and reindex data with update content.
 
-        Returns:
-            set -- the set of the categories idx filtered
+        Args:
+            cat_to_merge (List[str]): categories to be merged
+            new_cat (str): new label to assign to the merged categories
         """
-        return self.__to_keep_id_categories
+        catidx_to_merge = [
+            idx for idx, cat_meta in self.cats.items()
+            if cat_meta['name'] in cat_to_merge
+        ]
+        self.merge_category_ids(catidx_to_merge, new_cat)
 
-    def download_images(self):
-        """Download the images from the urls
+    def merge_category_ids(self, cat_to_merge: List[int], new_cat: str):
+        """ Merge two or more categories labels to a new single category.
+            Remove from __content the category to be merged and update
+            annotations cat_ids and reindex data with update content.
+
+        Args:
+            cat_to_merge (List[int]): categories to be merged
+            new_cat (str): new label to assign to the merged categories
         """
-        self.__image_folder.mkdir(exist_ok=True)
-        urls_filepath = [(img['coco_url'],
-                          self.__image_folder / img['file_name'])
-                         for img in self.__imgs.values()]
-        imageutils.process_images(urls_filepath, 1)
-        self.cleanup_missing_images()
+        new_cat_idx = max(self.cats.keys()) + 1
+
+        self.cats = {
+            idx: cat
+            for idx, cat in self.cats.items()
+            if idx not in cat_to_merge
+        }
+        self.cats[new_cat_idx] = {
+            "supercategory": "thing",
+            "id": new_cat_idx,
+            "name": new_cat
+        }
+
+        for ann_meta in tqdm(self.anns.values(), 'process annotations'):
+            if ann_meta['category_id'] in cat_to_merge:
+                ann_meta['category_id'] = new_cat_idx
+
+        self.reindex()
+
+    def remove_images_without_annotations(self):
+        idx_images_with_annotations = {
+            ann['image_id'] for ann in self.anns.values()
+        }
+
+        idx_to_remove = set(self.imgs.keys()) - idx_images_with_annotations
+        for idx in idx_to_remove:
+            del self.imgs[idx]
+        self.reindex()
 
     def cleanup_missing_images(self):
-        """remove missing images
+        """remove the images missing from images folder
         """
-        count = 0
-        for idx, img in self.__imgs.items():
-            path = self.__image_folder / img['file_name']
+        to_remove_idx = []
+        for idx in self.imgs:
+            img_meta = self.imgs[idx]
+            path = self.__image_folder / img_meta['file_name']
             if not path.exists():
-                del self.__imgs[idx]
-                count += 1
-        print('removed %d images' % (count))
+                # There could be paths that have whitespaces renamed (under windows)
+                alternative_path = self.__image_folder / img_meta[
+                    'file_name'].replace(" ", "_")
+                if not alternative_path.exists():
+                    del self.imgs[idx]
+                    to_remove_idx.append(idx)
 
-    def get_categories(self, only_name_id=False):
-        """return the dataset categories
+        print('removed %d images' % (len(to_remove_idx)))
 
-        Keyword Arguments:
-            only_name_id {bool} -- returns only id and category name (default: {False})
-
-        Returns:
-            [type] -- [description]
-        """
-        if only_name_id:
-            return {
-                idx: cat['name']
-                for idx, cat in self.__id_categories.items()
-            }
-        else:
-            return list(self.__id_categories.values())
-
-    def categories_images_count(self):
+    def cats_images_count(self):
         """get the number of images per category
-
         Returns:
             list -- a list of tuples category number of images
         """
-        results = list()
-        for cat_id, imgs_id in self.__catid_to_imgid.items():
-            cat_name = self.__id_categories[cat_id]['name']
-            results.append((cat_name, len(imgs_id)))
-        results = sorted(results, key=lambda x: x[1], reverse=True)
-        return results
+        cat_images_dict = defaultdict(set)
+        for ann_meta in self.anns.values():
+            cat_images_dict[ann_meta['category_id']].add(ann_meta['image_id'])
 
-    def categories_annotations_count(self):
+        return {
+            self.cats[idx]['name']: len(images)
+            for idx, images in cat_images_dict.items()
+        }
+
+    def cats_annotations_count(self):
         """the number of annotations per category
-
         Returns:
             list -- a list of tuples (category_name, number of annotations)
         """
-        results = list()
-        for cat_id, imgs_id in self.__catid_to_imgid.items():
-            cat_name = self.__id_categories[cat_id]['name']
-            annotations = list()
-            for img_id in imgs_id:
-                annotations.extend([
-                    ann for ann in self.__imgid_to_anns[img_id]
-                    if ann['category_id'] == cat_id
-                ])
-            results.append((cat_name, len(annotations)))
-        results = sorted(results, key=lambda x: x[1], reverse=True)
-        return results
+        cat_anns_dict = defaultdict(set)
+        for ann_meta in self.anns.values():
+            cat_anns_dict[ann_meta['category_id']].add(ann_meta['id'])
 
-    def keep_categories_id(self, id_categories):
-        """keep the images only from the selected categories and remove all the annotations
+        return {
+            self.cats[idx]['name']: len(anns)
+            for idx, anns in cat_anns_dict.items()
+        }
 
+    def keep_categories(self, ids: List[int]):
+        """keep images and annotations only from the selected categories
         Arguments:
             id_categories {list} -- the list of the id categories to keep
         """
-        self.__to_keep_id_categories = set(id_categories)
+        filtered_cat_ids = set(ids)
 
-    def keep_categories_name(self, name_categories):
-        """keep the images only from the selected categories and remove all the annotations
+        self.cats = {
+            idx: cat
+            for idx, cat in self.cats.items()
+            if idx in filtered_cat_ids
+        }
+
+        self.anns = {
+            idx: ann_meta
+            for idx, ann_meta in self.anns.items()
+            if ann_meta['category_id'] in filtered_cat_ids
+        }
+
+        self.remove_images_without_annotations()
+
+    def remove_images(self, image_idxs: List[int]) -> None:
+        """remove all the images and annotations in the specified list
 
         Arguments:
-            id_categories {list} -- the list of the id categories to keep
+            image_idxs {List[int]} -- [description]
         """
-        results = set()
-        name_categories_copy = name_categories.copy()
-        for cat in self.__id_categories.values():
-            if cat['name'] in name_categories_copy:
-                name_categories_copy.remove(cat['name'])
-                results.add(cat['id'])
-        assert len(results) == len(name_categories), 'wrong name in list'
-        self.__to_keep_id_categories = set(results)
+        image_idxs = set(image_idxs)
+
+        self.imgs = {
+            idx: img_meta
+            for idx, img_meta in self.imgs.items()
+            if idx not in image_idxs
+        }
+
+        self.anns = {
+            idx: ann_meta
+            for idx, ann_meta in self.anns.items()
+            if ann_meta['image_id'] not in image_idxs
+        }
+
+        catnames_to_remove = {
+            cat_name
+            for cat_name, count in self.cats_annotations_count().items()
+            if count == 0
+        }
+
+        self.cats = {
+            idx: cat_meta
+            for idx, cat_meta in self.cats.items()
+            if cat_meta['name'] not in catnames_to_remove
+        }
+
+        self.reindex()
+
+    def remove_annotations(self, ids: List[int]) -> None:
+        """Remove from the dataset all the annotations ids passes as parameter
+
+        Arguments:
+            img_ann_ids {Dict[int, List[Int]]} -- the dictionary of image id annotations ids to remove
+        """
+        ids = set(ids)
+        self.anns = {
+            idx: ann for idx, ann in self.anns.items() if idx not in ids
+        }
+        # remove the images with no annotations
+        self.remove_images_without_annotations()
+        self.reindex()
 
     def dumps(self):
         """dump the filtered annotations to a json
-
         Returns:
             object -- an object with the dumped annotations
         """
-        if len(self.__to_keep_id_categories):
-            filtered_categories = [
-                cat for idx, cat in self.__id_categories.items()
-                if idx in self.__to_keep_id_categories
-            ]
-            newidx_oldidx_dict = dict(enumerate(self.__to_keep_id_categories))
-            oldidx_newidx_dict = {v: k for k, v in newidx_oldidx_dict.items()}
-
-            filtered_annotations = list()
-            filtered_images = list()
-
-            for cat, img_ids in self.__catid_to_imgid.items():
-                if cat in self.__to_keep_id_categories:
-                    # for each image
-                    for img_id in img_ids:
-                        # append the image
-                        filtered_images.append(self.__imgs[img_id])
-                        # filter the annotations wrt the categories selected
-                        for ann in self.__imgid_to_anns[img_id]:
-                            if ann['category_id'] == cat:
-                                # remap the idx
-                                ann = ann.copy()
-                                ann['category_id'] = oldidx_newidx_dict[
-                                    ann['category_id']]
-                                filtered_annotations.append(ann)
-
-            filtered_categories_remapped = []
-            for cat in filtered_categories:
-                cat = cat.copy()
-                cat['id'] = oldidx_newidx_dict[cat['id']]
-                filtered_categories_remapped.append(cat)
-            filtered_categories = filtered_categories_remapped
-        else:
-            filtered_categories = self.get_categories()
-            filtered_images = self.__content['images']
-            filtered_annotations = self.__content['annotations']
-
         return {
-            'info': self.__content['info'],
-            'licenses': self.__content['licenses'],
-            'categories': filtered_categories,
-            'annotations': filtered_annotations,
-            'images': filtered_images,
+            'info': self.info,
+            'licenses': self.licenses,
+            'images': list(self.imgs.values()),
+            'categories': list(self.cats.values()),
+            'annotations': list(self.anns.values()),
         }
 
     def dump(self, path):
         """dump the dataset annotations and the images to the given path
-
         Arguments:
             path {str} -- the path to save the json and the images
         """
         with open(path, 'w') as fp:
             json.dump(self.dumps(), fp)
 
-    @classmethod
-    def train_dataset(cls, folder='.'):
-        """Download the Coco annotations and save them to the
+    def load_image(self, idx):
+        path = self.__image_folder / self.imgs[idx]['file_name']
+        return Image.open(path)
 
-        Keyword Arguments:
-            folder {str} -- [description] (default: {'.'})
-        """
-        pass
+    def mean_pixels(self, sample: int = 1000) -> List[float]:
 
-        minicoco_trainval_objecteddetection_url = ''
+        channels = {
+            'red': 0,
+            'green': 0,
+            'blue': 0,
+        }
+        idxs = np.random.choice(list(self.imgs.keys()), sample)
 
-    coco_2017_trainval_objectdetection_url = 'http://images.cocodataset.org/annotations/annotations_trainval2017.zip'
+        for idx in tqdm(idxs):
+            img = self.load_image(idx)
+            for i, color in enumerate(channels.keys()):
+                channels[color] += np.mean(img[..., i].flatten())
 
-    coco_2014_trainval_objectdetection_url = 'http://images.cocodataset.org/annotations/annotations_trainval2017.zip'
+            del img
 
-    @classmethod
-    def download_data(cls,
-                      task='object_detection',
-                      version='2017',
-                      path: str = None) -> Tuple:
-        """Download the coco dataset for object/keypoint detection and image captioning
-        
-        Keyword Arguments:
-            task {str} -- a valid dataset (default: {'object_detection'}), (values: {'object_detection', 'captioning', 'keypoints'})
-            version {str} -- [description] (default: {'2017'})
-            path {str} -- the path to save the file, if not the file is saved the '~/.polimorfo/datasets (default: {None})
-        
-        Raises:
-            NotImplementedError: [description]
-            NotImplementedError: [description]
-        
+        return [
+            channels['red'] / sample, channels['green'] / sample,
+            channels['blue'] / sample
+        ]
+
+    def add_category(self, name: str, supercategory: str) -> int:
+        """add a new category to the dataset
+
+        Args:
+            name (str): [description]
+            supercategory (str): [description]
+
         Returns:
-            Tuple[Coco, Coco] -- [description]
+            int: cat id
         """
-        if task == 'object_detection':
-            if version == '2017':
-                year = '2017'
-                url = cls.coco_2017_trainval_objectdetection_url
-            elif version == '2014':
-                year = '2014'
-                url = cls.coco_2014_trainval_objectdetection_url
-            else:
-                raise ValueError(
-                    'not valid value {} for year (supported values are 2014,2017'
-                    .format(task))
+        self.cat_id += 1
+        self.cats[self.cat_id] = {
+            'id': self.cat_id,
+            'name': name,
+            'supercategory': supercategory
+        }
+        return self.cat_id
 
-            if path is not None:
-                paths = datautils.download_file(
-                    'annotations_trainval{}.zip'.format(year),
-                    url,
-                    cache_dir=path)
-            else:
-                paths = datautils.download_file(
-                    'annotations_trainval{}.zip'.format(year), url)
+    def add_image(self, image_path: str) -> int:
+        """add an image to the dataset
 
-            # get all the files in the folder
-            paths = list(paths[0].glob('*.json'))
+        Args:
+            image_path (str): the name of the file
 
-            train_coco = None
-            val_coco = None
-            for path in paths:
-                # 2017 is not an error since in the 2014 folder the files are named as 2017
-                if path.name == 'instances_train2017.json':
-                    train_coco = Coco(path)
-                elif path.name == 'instances_val2017.json':
-                    val_coco = Coco(path)
-            return (train_coco, val_coco)
+        Returns:
+            int: the img id
+        """
+        self.img_id += 1
+        img = Image.open(image_path)
+        self.imgs[self.img_id] = {
+            'id': self.img_id,
+            'width': img.width,
+            'height': img.height,
+            'filename': Path(image_path).name,
+            'flickr_url': '',
+            'coco_url': '',
+            'data_captured': datetime.now().date().isoformat()
+        }
+        return self.img_id
 
-        elif task == 'captioning':
-            raise NotImplementedError()
+    def add_annotation(self, img_id: int, cat_id: int, segmentation: Any,
+                       area: float, bbox: List, is_crowd: int) -> int:
+        """add a new annotation to the dataset
 
-        elif task == 'keypoints':
-            raise NotImplementedError()
+        Args:
+            img_id (int): [description]
+            cat_id (int): [description]
+            segmentation (Any): [description]
+            area (float): [description]
+            bbox (List): [description]
+            is_crowd (int): [description]
 
-        else:
-            raise ValueError('not valid value {} for task'.format(task))
+        Returns:
+            int: [description]
+        """
+        assert img_id in self.imgs
+        assert cat_id in self.cats
+
+        self.ann_id += 1
+        self.anns[self.ann_id] = {
+            'id': self.ann_id,
+            'image_id': img_id,
+            'category_id': cat_id,
+            'segmentation': segmentation,
+            'area': area,
+            'bbox': bbox,
+            'iscrowd': is_crowd
+        }
+        return self.ann_id
