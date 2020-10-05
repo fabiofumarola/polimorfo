@@ -55,4 +55,14 @@ def test_create_dataset():
     img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix())
     ds.add_annotation(img_id, cat_id, [1, 2, 3, 4, 5], 10, [0, 0, 256, 256], 0)
 
-    print(ds.dumps())
+    assert len(ds) == 1
+    assert len(ds.anns) == 1
+
+
+def test_remove_categories():
+    ds = CocoDataset()
+    cat_id = ds.add_category('dog', 'animal')
+    assert len(ds.cats) == 1
+    ds.remove_categories([cat_id])
+
+    assert len(ds.cats) == 0
