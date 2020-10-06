@@ -130,7 +130,7 @@ def draw_instances(img,
                           facecolor='none')
             ax.add_patch(p)
 
-        #add the caption
+        # add the caption
         # draw text in the center (defined by median) when box is not drawn
         # median is less sensitive to outliers.
         text_pos = np.median(mask.nonzero(), axis=1)[::-1]
@@ -180,7 +180,10 @@ def create_text_labels(classes, scores, class_name_dict):
         list[str] or None
     """
     labels = [class_name_dict[i] for i in classes]
-    labels = ["{} {:.0f}%".format(l, s * 100) for l, s in zip(labels, scores)]
+    labels = [
+        "{} {:.0f}%".format(label, score * 100)
+        for label, score in zip(labels, scores)
+    ]
     return labels
 
 
@@ -242,7 +245,7 @@ def draw_segmentation(
         # draw text in the center (defined by median) when box is not drawn
         # median is less sensitive to outliers.
         text_pos = np.median(mask_cat.nonzero(), axis=1)[::-1] - 20
-        horiz_align = "left"
+        # horiz_align = "left"
 
         lighter_color = change_color_brightness(color, brightness_factor=0.7)
         font_size = 10
@@ -261,7 +264,7 @@ def draw_segmentation(
             p = Polygon(
                 verts,
                 facecolor=color,
-                edgecolor=lighter_color,    #'black',
+                edgecolor=lighter_color,    # 'black',
                 fill=True,
                 alpha=.5)
             ax.add_patch(p)

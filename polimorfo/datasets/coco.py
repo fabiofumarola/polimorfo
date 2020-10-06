@@ -2,12 +2,11 @@ from pathlib import Path
 import json
 from tqdm import tqdm
 from collections import defaultdict
-from typing import List
+from typing import List, Any
 import logging
 from PIL import Image
 import numpy as np
 from datetime import datetime
-from typing import Any, List
 from ..utils import maskutils, visualizeutils
 
 import matplotlib.pyplot as plt
@@ -155,7 +154,6 @@ class CocoDataset():
 
     def __len__(self):
         """the number of the images in the dataset
-        
         Returns:
             [int] -- the number of images in the dataset
         """
@@ -337,7 +335,8 @@ class CocoDataset():
         """Remove from the dataset all the annotations ids passes as parameter
 
         Arguments:
-            img_ann_ids {Dict[int, List[Int]]} -- the dictionary of image id annotations ids to remove
+            img_ann_ids {Dict[int, List[Int]]} -- the dictionary of 
+                image id annotations ids to remove
         """
         ids = set(ids)
         self.anns = {
