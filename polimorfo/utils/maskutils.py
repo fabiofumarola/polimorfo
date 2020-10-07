@@ -1,6 +1,7 @@
-import cv2
+# import cv2
 import pycocotools.mask as mask_util
 import numpy as np
+from skimage import measure
 
 
 def mask_to_polygons(mask):
@@ -13,7 +14,7 @@ def mask_to_polygons(mask):
     # cv2.CHAIN_APPROX_NONE flag gets vertices of polygons from contours.
     mask = np.ascontiguousarray(
         mask)    # some versions of cv2 does not support incontiguous arr
-    res = cv2.findContours(mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
+    res = measure.find_contours(mask, 0.5)
     hierarchy = res[-1]
     if hierarchy is None:    # empty mask
         return [], False

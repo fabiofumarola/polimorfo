@@ -1,6 +1,6 @@
 language: python
-arch:
-  - amd64
+# arch:
+#   - amd64
 python:
   - 3.8
   - 3.7
