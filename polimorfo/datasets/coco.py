@@ -335,7 +335,7 @@ class CocoDataset():
         """Remove from the dataset all the annotations ids passes as parameter
 
         Arguments:
-            img_ann_ids {Dict[int, List[Int]]} -- the dictionary of 
+            img_ann_ids {Dict[int, List[Int]]} -- the dictionary of
                 image id annotations ids to remove
         """
         ids = set(ids)
