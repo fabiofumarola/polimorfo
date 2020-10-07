@@ -2,12 +2,15 @@ from pathlib import Path
 import json
 from tqdm import tqdm
 from collections import defaultdict
-from typing import List
+from typing import List, Any
 import logging
 from PIL import Image
 import numpy as np
 from datetime import datetime
-from typing import Any, List
+from ..utils import maskutils, visualizeutils
+
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
 log = logging.getLogger(__name__)
 
@@ -151,7 +154,6 @@ class CocoDataset():
 
     def __len__(self):
         """the number of the images in the dataset
-        
         Returns:
             [int] -- the number of images in the dataset
         """
@@ -216,6 +218,7 @@ class CocoDataset():
 
             del self.cats[cat_idx]
 
+        self.remove_images_without_annotations()
         self.reindex()
 
     def remove_images_without_annotations(self):
@@ -332,7 +335,8 @@ class CocoDataset():
         """Remove from the dataset all the annotations ids passes as parameter
 
         Arguments:
-            img_ann_ids {Dict[int, List[Int]]} -- the dictionary of image id annotations ids to remove
+            img_ann_ids {Dict[int, List[Int]]} -- the dictionary of 
+                image id annotations ids to remove
         """
         ids = set(ids)
         self.anns = {
@@ -457,3 +461,91 @@ class CocoDataset():
             'iscrowd': is_crowd
         }
         return self.ann_id
+
+    def load_anns(self, ann_idxs):
+        if isinstance(ann_idxs, int):
+            ann_idxs = [ann_idxs]
+
+        return [self.anns[idx] for idx in ann_idxs]
+
+    def show_image(self,
+                   img_idx,
+                   anns_idx=None,
+                   ax=None,
+                   title=None,
+                   figsize=(18, 6)) -> plt.Axes:
+        """show an image with its annotations
+
+        Args:
+            img_idx ([type]): [description]
+            anns_idx ([type], optional): [description]. Defaults to None.
+            ax ([type], optional): [description]. Defaults to None.
+            title ([type], optional): [description]. Defaults to None.
+            figsize (tuple, optional): [description]. Defaults to (18, 6).
+
+        Returns:
+            [plt.Axes]: [description]
+        """
+        img = self.load_image(img_idx)
+
+        if anns_idx is None:
+            anns = [
+                ann for ann in self.anns.values() if ann['image_id'] == img_idx
+            ]
+        else:
+            anns = [self.anns[i] for i in anns_idx]
+
+        boxes = []
+        labels = []
+        scores = [1] * len(anns)
+        masks = []
+        for ann in anns:
+            boxes.append(ann['bbox'])
+            labels.append(ann['category_id'])
+            mask = maskutils.polygons_to_mask(ann['segmentation'], img.height,
+                                              img.width)
+            masks.append(mask)
+
+        masks = np.array(masks)
+        masks = np.moveaxis(masks, 0, -1)
+
+        if ax is None:
+            _, ax = plt.subplots(1, 1)
+
+        class_name_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
+
+        visualizeutils.draw_instances(img,
+                                      boxes,
+                                      labels,
+                                      scores,
+                                      masks,
+                                      class_name_dict,
+                                      title,
+                                      ax=ax,
+                                      figsize=figsize)
+
+        return ax
+
+    def show_images(self, img_idxs, num_cols=4, figsize=(32, 32)) -> plt.Figure:
+        """show the images with their annotations
+
+        Args:
+            img_idxs ([type]): [description]
+            num_cols (int, optional): [description]. Defaults to 4.
+            figsize (tuple, optional): [description]. Defaults to (32, 32).
+
+        Returns:
+            plt.Figure: [description]
+        """
+        num_rows = len(img_idxs) // num_cols
+        fig = plt.figure(figsize=figsize)
+
+        gs = gridspec.GridSpec(num_rows, num_cols)
+        gs.update(wspace=0.025, hspace=0.05)    # set the spacing between axes.
+
+        for i, img_idx in enumerate(img_idxs):
+            ax = plt.subplot(gs[i])
+            ax.set_aspect('equal')
+            self.show_image(img_idx, ax=ax)
+
+        return fig
