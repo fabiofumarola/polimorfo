@@ -6,7 +6,6 @@ from skimage.measure import find_contours
 from matplotlib.patches import Polygon, Rectangle
 import matplotlib
 import matplotlib.pyplot as plt
-from . import maskutils
 from typing import List
 
 
