@@ -202,7 +202,9 @@ class CocoDataset():
 
         self.reindex()
 
-    def remove_categories(self, idxs: List[int]) -> None:
+    def remove_categories(self,
+                          idxs: List[int],
+                          remove_images: bool = False) -> None:
         """Remove the categories with the relative annotations
 
         Args:
@@ -218,7 +220,8 @@ class CocoDataset():
 
             del self.cats[cat_idx]
 
-        self.remove_images_without_annotations()
+        if remove_images:
+            self.remove_images_without_annotations()
         self.reindex()
 
     def remove_images_without_annotations(self):
@@ -276,7 +279,7 @@ class CocoDataset():
             for idx, anns in cat_anns_dict.items()
         }
 
-    def keep_categories(self, ids: List[int]):
+    def keep_categories(self, ids: List[int], remove_images: bool = False):
         """keep images and annotations only from the selected categories
         Arguments:
             id_categories {list} -- the list of the id categories to keep
@@ -295,7 +298,8 @@ class CocoDataset():
             if ann_meta['category_id'] in filtered_cat_ids
         }
 
-        self.remove_images_without_annotations()
+        if remove_images:
+            self.remove_images_without_annotations()
 
     def remove_images(self, image_idxs: List[int]) -> None:
         """remove all the images and annotations in the specified list
@@ -331,7 +335,9 @@ class CocoDataset():
 
         self.reindex()
 
-    def remove_annotations(self, ids: List[int]) -> None:
+    def remove_annotations(self,
+                           ids: List[int],
+                           remove_images: bool = False) -> None:
         """Remove from the dataset all the annotations ids passes as parameter
 
         Arguments:
@@ -342,8 +348,10 @@ class CocoDataset():
         self.anns = {
             idx: ann for idx, ann in self.anns.items() if idx not in ids
         }
+
         # remove the images with no annotations
-        self.remove_images_without_annotations()
+        if remove_images:
+            self.remove_images_without_annotations()
         self.reindex()
 
     def dumps(self):

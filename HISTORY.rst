@@ -24,4 +24,5 @@ History
 0.5.0 (2020-10-06)
 -------------------
 
-* addedd support to visualize images and annotations
+* added support to visualize images and annotations
+* make image removing optional during annotations and categories deletion
