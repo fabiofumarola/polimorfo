@@ -92,15 +92,15 @@ def test_download_archive():
     shutil.rmtree(files[0].parent.parent)
 
 
-@pytest.mark.usefixtures("cleandir")
-def test_download_file_github():
-    files = datautils.download_file(
-        name='densenet121_weights_tf_dim_ordering_tf_kernels.h5',
-        url=
-        'https://github.com/keras-team/keras-applications/releases/download/densenet/densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5',
-        cache_dir=BASE_PATH,
-        extract=False)
+# @pytest.mark.usefixtures("cleandir")
+# def test_download_file_github():
+#     files = datautils.download_file(
+#         name='densenet121_weights_tf_dim_ordering_tf_kernels.h5',
+#         url=
+#         'https://github.com/keras-team/keras-applications/releases/download/densenet/densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5',
+#         cache_dir=BASE_PATH,
+#         extract=False)
 
-    print(files)
-    assert len(files) > 0
-    shutil.rmtree(files[0].parent)
+#     print(files)
+#     assert len(files) > 0
+#     shutil.rmtree(files[0].parent)
