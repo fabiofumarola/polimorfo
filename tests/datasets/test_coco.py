@@ -36,12 +36,12 @@ def test_categories_annotations_count(coco_test):
 
 
 def test_keep_categories(coco_test):
-    coco_test.keep_categories([80, 89])
+    coco_test.keep_categories([80, 89], True)
     assert len(coco_test.cats) == 2
 
 
 def test_dumps(coco_test):
-    coco_test.keep_categories([80, 89])
+    coco_test.keep_categories([80, 89], True)
 
     data = coco_test.dumps()
     assert len(data['categories']) == 2

@@ -26,3 +26,4 @@ History
 
 * added support to visualize images and annotations
 * make image removing optional during annotations and categories deletion
+
