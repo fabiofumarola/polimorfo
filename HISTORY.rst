@@ -27,3 +27,8 @@ History
 * added support to visualize images and annotations
 * make image removing optional during annotations and categories deletion
 
+0.6.0 (2020-10-12)
+-------------------
+
+* added copy dataset
+* added split dataset

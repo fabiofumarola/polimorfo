@@ -66,3 +66,24 @@ def test_remove_categories():
     ds.remove_categories([cat_id])
 
     assert len(ds.cats) == 0
+
+
+def test_create_split(coco_test):
+    train, val, test = coco_test.split(.8, .1)
+    assert len(train) > 0
+    assert len(val) > 0
+    assert len(test) > 0
+
+
+def test_create_split_notest(coco_test: CocoDataset):
+    train, val, test = coco_test.split(.8, .3)
+    assert len(train) > 0
+    assert len(val) > 0
+    assert len(test) == 0
+
+
+def test_copy(coco_test: CocoDataset):
+    copy_coco = coco_test.copy()
+    assert id(coco_test.imgs) != id(copy_coco.imgs)
+    assert id(coco_test.cats) != id(copy_coco.cats)
+    assert id(coco_test.anns) != id(copy_coco.anns)

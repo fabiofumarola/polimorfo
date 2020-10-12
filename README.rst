@@ -7,7 +7,7 @@ polimòrfo
         :target: https://pypi.python.org/pypi/polimorfo
 
 .. image:: https://img.shields.io/travis/fabiofumarola/polimorfo.svg
-        :target: https://travis-ci.org/fabiofumarola/polimorfo
+        :target: https://travis-ci.com/fabiofumarola/polimorfo
 
 .. image:: https://readthedocs.org/projects/polimorfo/badge/?version=latest
         :target: https://polimorfo.readthedocs.io/en/latest/?badge=latest

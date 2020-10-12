@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 from tqdm import tqdm
 from collections import defaultdict
-from typing import List, Any
+from typing import List, Any, Tuple
 import logging
 from PIL import Image
 import numpy as np
@@ -11,6 +11,7 @@ from ..utils import maskutils, visualizeutils
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import copy
 
 log = logging.getLogger(__name__)
 
@@ -96,6 +97,18 @@ class CocoDataset():
                 if ann_meta['id'] > self.ann_id:
                     self.ann_id = ann_meta['id']
                 self.anns[ann_meta['id']] = ann_meta
+
+    def copy(self):
+        new_coco = CocoDataset(image_path=self.__image_folder)
+        new_coco.cats = copy.deepcopy(self.cats)
+        new_coco.imgs = copy.deepcopy(self.imgs)
+        new_coco.anns = copy.deepcopy(self.anns)
+        new_coco.cat_id = self.cat_id
+        new_coco.img_id = self.img_id
+        new_coco.ann_id = self.ann_id
+        new_coco.licenses = self.licenses
+        new_coco.info = self.info
+        return new_coco
 
     def reindex(self):
         """reindex images and annotations to be zero based and categories one based
@@ -481,7 +494,8 @@ class CocoDataset():
                    anns_idx=None,
                    ax=None,
                    title=None,
-                   figsize=(18, 6)) -> plt.Axes:
+                   figsize=(18, 6),
+                   colors=None) -> plt.Axes:
         """show an image with its annotations
 
         Args:
@@ -521,6 +535,8 @@ class CocoDataset():
             _, ax = plt.subplots(1, 1)
 
         class_name_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
+        if colors is None:
+            colors = visualizeutils.generate_colormap(len(class_name_dict))
 
         visualizeutils.draw_instances(img,
                                       boxes,
@@ -530,7 +546,8 @@ class CocoDataset():
                                       class_name_dict,
                                       title,
                                       ax=ax,
-                                      figsize=figsize)
+                                      figsize=figsize,
+                                      colors=colors)
 
         return ax
 
@@ -551,9 +568,38 @@ class CocoDataset():
         gs = gridspec.GridSpec(num_rows, num_cols)
         gs.update(wspace=0.025, hspace=0.05)    # set the spacing between axes.
 
+        class_name_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
+        colors = visualizeutils.generate_colormap(len(class_name_dict))
+
         for i, img_idx in enumerate(img_idxs):
             ax = plt.subplot(gs[i])
             ax.set_aspect('equal')
-            self.show_image(img_idx, ax=ax)
+            self.show_image(img_idx, ax=ax, colors=colors)
 
         return fig
+
+    def split(self, train_perc, val_perc, test_perc=None) -> Tuple:
+        if test_perc is None:
+            test_perc = 1 - (train_perc + val_perc)
+        if not int(train_perc + val_perc + test_perc) == 1:
+            raise ValueError(
+                'the sum of train val and test percentage is not equal to 1')
+
+        train_end = int(len(self.imgs) * train_perc)
+        val_end = int(len(self.imgs) * (train_perc + val_perc))
+        test_perc = int(len(self.imgs) * (train_perc + val_perc + test_perc))
+
+        train_img_ids = list(self.imgs.keys())[:train_end]
+        val_img_ids = list(self.imgs.keys())[train_end:val_end]
+        test_img_ids = list(self.imgs.keys())[val_end:]
+
+        train_ds = self.copy()
+        train_ds.remove_images(val_img_ids + test_img_ids)
+
+        val_ds = self.copy()
+        val_ds.remove_images(train_img_ids + test_img_ids)
+
+        test_ds = self.copy()
+        test_ds.remove_images(train_img_ids + val_img_ids)
+
+        return train_ds, val_ds, test_ds
