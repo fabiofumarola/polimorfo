@@ -37,3 +37,9 @@ History
 -------------------
 
 * fixed a bug in colors generation for show images
+
+
+0.6.2 (2020-10-12)
+-------------------
+
+* update signature for function `def update_images_path(self, func):`
