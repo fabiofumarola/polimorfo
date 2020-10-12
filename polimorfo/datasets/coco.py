@@ -536,7 +536,7 @@ class CocoDataset():
 
         class_name_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
         if colors is None:
-            colors = visualizeutils.generate_colormap(len(class_name_dict))
+            colors = visualizeutils.generate_colormap(len(class_name_dict) + 1)
 
         visualizeutils.draw_instances(img,
                                       boxes,
@@ -569,7 +569,7 @@ class CocoDataset():
         gs.update(wspace=0.025, hspace=0.05)    # set the spacing between axes.
 
         class_name_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
-        colors = visualizeutils.generate_colormap(len(class_name_dict))
+        colors = visualizeutils.generate_colormap(len(class_name_dict) + 1)
 
         for i, img_idx in enumerate(img_idxs):
             ax = plt.subplot(gs[i])
