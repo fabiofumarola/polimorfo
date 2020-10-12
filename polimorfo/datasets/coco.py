@@ -16,14 +16,6 @@ import copy
 log = logging.getLogger(__name__)
 
 
-class UpdateImage():
-    """class used to pass a function to change the file_name path
-    """
-
-    def __call__(self, in_path: str) -> str:
-        pass
-
-
 class CocoDataset():
     """Process the dataset in COCO format
         Data Format
@@ -150,14 +142,14 @@ class CocoDataset():
         self.imgs = new_imgs
         self.anns = new_anns
 
-    def update_image_annotations_path(self, update_images: UpdateImage):
+    def update_images_path(self, func):
         """update the images path
         Args:
             update_images (UpdateImages): a class with a callable function to change the path
         """
 
         for img_meta in tqdm(self.imgs.values()):
-            img_meta['file_name'] = update_images(img_meta['file_name'])
+            img_meta['file_name'] = func(img_meta['file_name'])
 
     def compute_area(self):
         """compute the area of the annotations

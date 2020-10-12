@@ -87,3 +87,9 @@ def test_copy(coco_test: CocoDataset):
     assert id(coco_test.imgs) != id(copy_coco.imgs)
     assert id(coco_test.cats) != id(copy_coco.cats)
     assert id(coco_test.anns) != id(copy_coco.anns)
+
+
+def test_update_images_path(coco_test: CocoDataset):
+    coco_test.update_images_path(lambda x: Path(x).name)
+    coco_test.reindex()
+    assert coco_test.imgs[1]['file_name'] == '000000410627.jpg'

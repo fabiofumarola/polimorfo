@@ -32,3 +32,8 @@ History
 
 * added copy dataset
 * added split dataset
+
+0.6.1 (2020-10-12)
+-------------------
+
+* fixed a bug in colors generation for show images
