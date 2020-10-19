@@ -43,3 +43,9 @@ History
 -------------------
 
 * update signature for function `def update_images_path(self, func):`
+
+
+0.7.0 (2020-10-19)
+-------------------
+
+* add method to dump dataset in format segmentation map

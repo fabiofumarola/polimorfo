@@ -2,7 +2,7 @@ import pytest
 from pytest import fixture
 from pathlib import Path
 import shutil
-from polimorfo.datasets import CocoDataset
+from polimorfo.datasets import CocoDataset, ExportFormat
 
 BASE_PATH = Path(__file__).parent.parent / 'data'
 
@@ -46,6 +46,13 @@ def test_dumps(coco_test):
     data = coco_test.dumps()
     assert len(data['categories']) == 2
     assert len(data['images']) == 406
+
+
+def test_dump_segmentation(coco_test):
+    out_path = BASE_PATH / 'segments'
+    coco_test.dump(out_path, ExportFormat.segmentation)
+    assert len(list(out_path.glob('*.png'))) > 0
+    shutil.rmtree(out_path.as_posix())
 
 
 def test_create_dataset():

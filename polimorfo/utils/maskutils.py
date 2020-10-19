@@ -5,6 +5,14 @@ from skimage import measure
 
 
 def mask_to_polygons(mask):
+    """convert mask to poyling
+
+    Args:
+        mask (np.ndarray): the mask
+
+    Returns:
+        [np.ndarray, bool]:
+    """
     if len(mask.shape) == 3:
         mask = np.squeeze(mask)
     mask = (mask > 0.5).astype(np.uint8)
@@ -42,3 +50,17 @@ def bbox(polygons, height, width):
     bbox[2] += bbox[0]
     bbox[3] += bbox[1]
     return bbox
+
+
+def coco_poygons_to_mask(segmentations, heigth, width):
+    masks = []
+    for polygons in segmentations:
+        mask = polygons_to_mask(polygons, heigth, width)
+        # mask = np.any(mask, axis=2)
+        masks.append(mask)
+
+    if masks:
+        masks = np.stack(masks, axis=0)
+    else:
+        masks = np.zeros((heigth, width), dtype=np.uint8)
+    return masks

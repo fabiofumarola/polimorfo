@@ -13,7 +13,16 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import copy
 
+from enum import Enum
+
 log = logging.getLogger(__name__)
+
+__all__ = ['CocoDataset', 'ExportFormat']
+
+
+class ExportFormat(Enum):
+    coco = 1
+    segmentation = 2
 
 
 class CocoDataset():
@@ -372,19 +381,91 @@ class CocoDataset():
             'annotations': list(self.anns.values()),
         }
 
-    def dump(self, path):
+    def dump(self, path, exp_format: ExportFormat = ExportFormat.coco):
         """dump the dataset annotations and the images to the given path
-        Arguments:
-            path {str} -- the path to save the json and the images
+
+        Args:
+            path ([type]): the path to save the json and the images
+            exp_format (ExportFormat, optional): [the supported format]. Defaults to ExportFormat.coco.
+
+        Raises:
+            ValueError: [description]
         """
-        with open(path, 'w') as fp:
-            json.dump(self.dumps(), fp)
+        path = Path(path)
+
+        if exp_format.value == ExportFormat.coco.value:
+            with open(path, 'w') as fp:
+                json.dump(self.dumps(), fp)
+        elif exp_format.value is ExportFormat.segmentation.value:
+            # create a segmentation folder
+            if path:
+                segments_path = path
+            else:
+                segments_path = self.__image_folder.parent / 'segments'
+            segments_path.mkdir(exist_ok=True, parents=True)
+
+            # save a png of the masks
+            for img_idx, img_meta in tqdm(
+                    self.imgs.items(),
+                    f'savig images in {segments_path.as_posix()}'):
+                segm_path = segments_path / (Path(img_meta['file_name']).name +
+                                             '.png')
+                segm_img = self.get_segmentation_mask(img_idx)
+                segm_img.save(segm_path)
+        else:
+            raise ValueError('export format not valid')
+
+    def get_segmentation_mask(self, img_idx: int, cats_idx: List[int] = None):
+        """generate a mask for the given image idx
+
+        Args:
+            img_idx (int): [the id of the image]
+            cats_idx (List[int], optional): [an optional filter over the classes]. Defaults to None.
+
+        Returns:
+            [type]: [description]
+        """
+        img_meta = self.imgs[img_idx]
+        width, heigth = img_meta['width'], img_meta['height']
+        anns = [ann for ann in self.anns.values() if ann['image_id'] == img_idx]
+        if cats_idx:
+            anns = [ann for ann in anns if ann['category_id'] in cats_idx]
+        segmentations = [obj['segmentation'] for obj in anns]
+        if segmentations:
+            masks = maskutils.coco_poygons_to_mask(segmentations, heigth, width)
+            cats = np.array([obj['category_id'] for obj in anns],
+                            dtype=masks.dtype)
+
+            target = np.max((masks * cats[:, None, None]), axis=0)
+            # discard overlapping instances
+            target[masks.sum(0) > 1] = 0
+        else:
+            target = np.zeros((heigth, width), dtype=np.uint8)
+
+        target = Image.fromarray(target)
+        return target
 
     def load_image(self, idx):
+        """load an image from the idx
+
+        Args:
+            idx ([type]): the idx of the image
+
+        Returns:
+            [Pillow.Image]: []
+        """
         path = self.__image_folder / self.imgs[idx]['file_name']
         return Image.open(path)
 
     def mean_pixels(self, sample: int = 1000) -> List[float]:
+        """compute the mean of the pixels
+
+        Args:
+            sample (int, optional): [description]. Defaults to 1000.
+
+        Returns:
+            List[float]: [description]
+        """
 
         channels = {
             'red': 0,
