@@ -652,6 +652,19 @@ class CocoDataset():
         return fig
 
     def split(self, train_perc, val_perc, test_perc=None) -> Tuple:
+        """split the dataset 
+
+        Args:
+            train_perc ([type]): [description]
+            val_perc ([type]): [description]
+            test_perc ([type], optional): [description]. Defaults to None.
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Tuple: [description]
+        """
         if test_perc is None:
             test_perc = 1 - (train_perc + val_perc)
         if not int(train_perc + val_perc + test_perc) == 1:
