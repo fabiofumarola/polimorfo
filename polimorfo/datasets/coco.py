@@ -54,6 +54,7 @@ class CocoDataset():
         self.imgs = dict()
         self.anns = dict()
 
+        # contains the next available id
         self.cat_id = 1
         self.img_id = 0
         self.ann_id = 0
@@ -91,16 +92,19 @@ class CocoDataset():
                 if cat_meta['id'] > self.cat_id:
                     self.cat_id = cat_meta['id']
                 self.cats[cat_meta['id']] = cat_meta
+            self.cat_id += 1
 
             for img_meta in tqdm(data['images'], desc='load images'):
                 if img_meta['id'] > self.img_id:
                     self.img_id = img_meta['id']
                 self.imgs[img_meta['id']] = img_meta
+            self.img_id += 1
 
             for ann_meta in tqdm(data['annotations'], desc='load annotations'):
                 if ann_meta['id'] > self.ann_id:
                     self.ann_id = ann_meta['id']
                 self.anns[ann_meta['id']] = ann_meta
+            self.ann_id += 1
 
     def copy(self):
         new_coco = CocoDataset(image_path=self.__image_folder)
@@ -125,6 +129,7 @@ class CocoDataset():
             cat_meta['id'] = new_idx
             new_cats[new_idx] = cat_meta
             self.cat_id = new_idx
+        self.cat_id += 1
 
         old_new_imgidx = dict()
         new_imgs = dict()
@@ -135,6 +140,7 @@ class CocoDataset():
             img_meta['id'] = new_idx
             new_imgs[new_idx] = img_meta
             self.img_id = new_idx
+        self.img_id += 1
 
         new_anns = dict()
         for new_idx, (old_idx, ann_meta) in tqdm(enumerate(self.anns.items()),
@@ -145,6 +151,7 @@ class CocoDataset():
             ann_meta['image_id'] = old_new_imgidx[ann_meta['image_id']]
             new_anns[new_idx] = ann_meta
             self.ann_id = new_idx
+        self.ann_id += 1
 
         del self.cats
         del self.imgs
@@ -499,13 +506,13 @@ class CocoDataset():
         Returns:
             int: cat id
         """
-        self.cat_id += 1
         self.cats[self.cat_id] = {
             'id': self.cat_id,
             'name': name,
             'supercategory': supercategory
         }
-        return self.cat_id
+        self.cat_id += 1
+        return self.cat_id - 1
 
     def add_image(self, image_path: str) -> int:
         """add an image to the dataset
@@ -516,7 +523,6 @@ class CocoDataset():
         Returns:
             int: the img id
         """
-        self.img_id += 1
         img = Image.open(image_path)
         self.imgs[self.img_id] = {
             'id': self.img_id,
@@ -527,7 +533,8 @@ class CocoDataset():
             'coco_url': '',
             'data_captured': datetime.now().date().isoformat()
         }
-        return self.img_id
+        self.img_id += 1
+        return self.img_id - 1
 
     def add_annotation(self, img_id: int, cat_id: int, segmentation: Any,
                        area: float, bbox: List, is_crowd: int) -> int:
@@ -547,7 +554,6 @@ class CocoDataset():
         assert img_id in self.imgs
         assert cat_id in self.cats
 
-        self.ann_id += 1
         self.anns[self.ann_id] = {
             'id': self.ann_id,
             'image_id': img_id,
@@ -557,7 +563,8 @@ class CocoDataset():
             'bbox': bbox,
             'iscrowd': is_crowd
         }
-        return self.ann_id
+        self.ann_id += 1
+        return self.ann_id - 1
 
     def load_anns(self, ann_idxs):
         if isinstance(ann_idxs, int):
