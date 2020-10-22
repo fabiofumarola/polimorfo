@@ -1,6 +1,6 @@
-import pytest
-import numpy as np
-from polimorfo.utils import maskutils
+# import pytest
+# import numpy as np
+# from polimorfo.utils import maskutils
 
 # def test_mask_to_polygons():
 #     mask = np.array(
@@ -11,5 +11,5 @@ from polimorfo.utils import maskutils
 #          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
 #         dtype=np.uint8)
 
-    #     polygons = maskutils.mask_to_polygon(mask)
-    #     assert len(polygons) == 2
+#     polygons = maskutils.mask_to_polygon(mask)
+#     assert len(polygons) == 2
