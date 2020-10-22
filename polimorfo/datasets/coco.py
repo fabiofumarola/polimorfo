@@ -69,6 +69,9 @@ class CocoDataset():
 
         self.licenses = {}
 
+        if image_path is not None:
+            self.__image_folder = Path(image_path)
+
         if coco_path is not None:
             with Path(coco_path).open() as f:
                 data = json.load(f)
@@ -519,7 +522,7 @@ class CocoDataset():
             'id': self.img_id,
             'width': img.width,
             'height': img.height,
-            'filename': Path(image_path).name,
+            'file_name': Path(image_path).name,
             'flickr_url': '',
             'coco_url': '',
             'data_captured': datetime.now().date().isoformat()
@@ -592,7 +595,7 @@ class CocoDataset():
 
         boxes = []
         labels = []
-        scores = [1] * len(anns)
+        scores = []
         masks = []
         for ann in anns:
             boxes.append(ann['bbox'])
@@ -600,6 +603,11 @@ class CocoDataset():
             mask = maskutils.polygons_to_mask(ann['segmentation'], img.height,
                                               img.width)
             masks.append(mask)
+            if 'score' in ann:
+                scores.append(ann['score'])
+
+        if not len(scores):
+            scores = [1] * len(anns)
 
         masks = np.array(masks)
         masks = np.moveaxis(masks, 0, -1)

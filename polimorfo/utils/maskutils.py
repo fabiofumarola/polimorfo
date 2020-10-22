@@ -26,7 +26,11 @@ def mask_to_polygons(mask):
     hierarchy = res[-1]
     if hierarchy is None:    # empty mask
         return [], False
-    has_holes = (hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0
+    try:
+        has_holes = (hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0
+    except Exception:
+        has_holes = False
+
     res = res[-2]
     res = [x.flatten() for x in res]
     res = [x for x in res if len(x) >= 6]
