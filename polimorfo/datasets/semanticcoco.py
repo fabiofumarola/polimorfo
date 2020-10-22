@@ -47,9 +47,9 @@ class SemanticCocoDataset(CocoDataset):
                                         score))
             return annotation_ids
 
-    # def add_annotation_from_scores(self,
-    #                                img_id: int,
-    #                                mask_logits: np.ndarray,
-    #                                cats_mapping: List = None,
-    #                                start_index=0) -> int:
-    #     pass
+    def add_annotation_from_scores(self,
+                                   img_id: int,
+                                   mask_logits: np.ndarray,
+                                   cats_mapping: List = None,
+                                   start_index=0) -> int:
+        pass

@@ -561,15 +561,19 @@ class CocoDataset():
         assert img_id in self.imgs
         assert cat_id in self.cats
 
-        self.anns[self.ann_id] = {
+        metadata = {
             'id': self.ann_id,
             'image_id': img_id,
             'category_id': cat_id,
             'segmentation': segmentation,
             'area': area,
             'bbox': bbox,
-            'iscrowd': is_crowd
+            'iscrowd': is_crowd,
         }
+        if score:
+            metadata['score'] = score
+
+        self.anns[self.ann_id] = metadata
         self.ann_id += 1
         return self.ann_id - 1
 
