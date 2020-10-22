@@ -536,8 +536,14 @@ class CocoDataset():
         self.img_id += 1
         return self.img_id - 1
 
-    def add_annotation(self, img_id: int, cat_id: int, segmentation: Any,
-                       area: float, bbox: List, is_crowd: int) -> int:
+    def add_annotation(self,
+                       img_id: int,
+                       cat_id: int,
+                       segmentation: Any,
+                       area: float,
+                       bbox: List,
+                       is_crowd: int,
+                       score: float = None) -> int:
         """add a new annotation to the dataset
 
         Args:
@@ -547,6 +553,7 @@ class CocoDataset():
             area (float): [description]
             bbox (List): [description]
             is_crowd (int): [description]
+            score (float): [optional score of the prediction]
 
         Returns:
             int: [description]

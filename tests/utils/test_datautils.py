@@ -4,7 +4,7 @@ import os
 import pytest
 import shutil
 
-BASE_PATH = Path(__file__).parent.parent.parent / 'data'
+BASE_PATH = Path(__file__).parent.parent / 'data'
 
 
 @pytest.fixture
