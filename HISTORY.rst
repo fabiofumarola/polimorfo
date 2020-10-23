@@ -63,3 +63,8 @@ History
 ------------------
 
 * fixed bug for tqdm when removing a category and its annotations from the dataset
+
+0.8.2 (2020-10-23)
+------------------
+
+* removed the prefix jpg when saving masks
