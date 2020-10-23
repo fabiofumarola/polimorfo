@@ -238,7 +238,8 @@ class CocoDataset():
             if cat_idx not in self.cats:
                 continue
 
-            for idx, ann_meta in tqdm(self.anns.items(), 'process annotations'):
+            for idx in tqdm(list(self.anns), 'process annotations'):
+                ann_meta = self.anns[idx]
                 if ann_meta['category_id'] == cat_idx:
                     del self.anns[idx]
 
