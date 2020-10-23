@@ -1,9 +1,6 @@
-from polimorfo.utils import maskutils
-from matplotlib.pyplot import sci
 from .coco import CocoDataset
-from typing import Any, List, Union
+from typing import Any, List
 import numpy as np
-import scipy
 from ..utils import maskutils
 
 __all__ = ['InstanceCoco']
@@ -19,9 +16,9 @@ class InstanceCoco(CocoDataset):
 
     """
 
-    def add_instance_annotations(self, img_id: int, labels: np.ndarray,
-                                 boxes: np.ndarray, masks: np.ndarray,
-                                 scores: np.ndarray) -> List[int]:
+    def add_annotations(self, img_id: int, labels: np.ndarray,
+                        boxes: np.ndarray, masks: np.ndarray,
+                        scores: np.ndarray) -> List[int]:
         """add the annotations from the given results
 
         Args:

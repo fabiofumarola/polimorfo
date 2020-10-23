@@ -1,5 +1,3 @@
-from polimorfo.utils import maskutils
-from matplotlib.pyplot import sci
 from .coco import CocoDataset
 from typing import Any, List
 import numpy as np

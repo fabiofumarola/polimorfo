@@ -396,7 +396,8 @@ class CocoDataset():
 
         Args:
             path ([type]): the path to save the json and the images
-            exp_format (ExportFormat, optional): [the supported format]. Defaults to ExportFormat.coco.
+            exp_format (ExportFormat, optional): [the supported format].
+                 Defaults to ExportFormat.coco.
 
         Raises:
             ValueError: [description]
