@@ -420,7 +420,8 @@ class CocoDataset():
             for img_idx, img_meta in tqdm(
                     self.imgs.items(),
                     f'savig images in {segments_path.as_posix()}'):
-                name = '.'.join(img_meta['file_name'].name.split('.')[:-1])
+                name = '.'.join(
+                    Path(img_meta['file_name']).name.split('.')[:-1])
                 segm_path = segments_path / (name + '.png')
                 segm_img = self.get_segmentation_mask(img_idx)
                 segm_img.save(segm_path)
