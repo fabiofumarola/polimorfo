@@ -10,8 +10,8 @@ __all__ = [
 ]
 
 
-def mask_to_polygon(mask):
-    mask = mask.astype(np.uint8)
+def mask_to_polygon(mask, min_score=0.5):
+    mask = (mask > min_score).astype(np.uint8)
     mask = cv2.copyMakeBorder(mask, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
     polygons = cv2.findContours(mask,
                                 cv2.RETR_LIST,
@@ -28,7 +28,8 @@ def polygons_to_mask(polygons, height, width):
     return mask_util.decode(rle)[:, :]
 
 
-def area(mask):
+def area(mask, min_score=0.5):
+    mask = (mask > min_score).astype(np.uint8)
     return mask.sum()
 
 

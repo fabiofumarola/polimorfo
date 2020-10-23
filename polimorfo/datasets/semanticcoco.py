@@ -6,15 +6,40 @@ import numpy as np
 import scipy
 from ..utils import maskutils
 
+__all__ = ['SemanticCocoDataset']
+
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
 
 class SemanticCocoDataset(CocoDataset):
+    """An extension of the coco dataset to handle the output of a semantic segmentation model
 
-    def add_semantic_annotation(self,
-                                img_id: int,
-                                masks: np.ndarray,
-                                probs: np.ndarray,
-                                cats_idxs: List = None,
-                                start_index=1) -> int:
+    """
+
+    def add_annotations(self,
+                        img_id: int,
+                        masks: np.ndarray,
+                        probs: np.ndarray,
+                        start_index=1) -> List[int]:
+        """add the annotation from the given masks
+
+        Args:
+            img_id (int): the id of the image to associate the annotations
+            masks (np.ndarray): a mask of shape [Height, Width]
+            probs (np.ndarray): an array of shape [NClasses, Height, Width]
+            cats_idxs (List, optional): A list that maps the. Defaults to None.
+            start_index (int, optional): the index to start generating the coco polygons.
+                Normally, 0 encodes the background. Defaults to 1.
+
+        Raises:
+            ValueError: if the shape of masks is different than 2
+            ValueError: if the shape of probs is different than 3
+
+        Returns:
+            List[int]: [the idx of the annotations added]
+        """
 
         if len(masks.shape) != 2:
             raise ValueError('masks.shape should equal to 2')
@@ -25,13 +50,12 @@ class SemanticCocoDataset(CocoDataset):
         # for each class
         for i, class_idx in enumerate(
                 np.unique(masks)[start_index:], start_index):
-            #get the mask transposed to match shape (Width, Heigth)
             class_mask = (masks == class_idx).astype(np.uint8)
             class_probs = probs[i]
-            if cats_idxs:
-                cat_id = cats_idxs[i]
-            else:
-                cat_id = class_idx
+            cat_id = class_idx
+
+            if cat_id not in self.cats:
+                raise ValueError(f'cats {cat_id} not in dataset categories')
 
             groups, n_groups = scipy.ndimage.label(class_mask)
             annotation_ids = []
@@ -47,9 +71,21 @@ class SemanticCocoDataset(CocoDataset):
                                         score))
             return annotation_ids
 
-    def add_annotation_from_scores(self,
-                                   img_id: int,
-                                   mask_logits: np.ndarray,
-                                   cats_mapping: List = None,
-                                   start_index=0) -> int:
-        pass
+    def add_annotations_from_scores(self,
+                                    img_id: int,
+                                    mask_logits: np.ndarray,
+                                    start_index=1) -> List[int]:
+        """add the annotations from the logit masks
+
+        Args:
+            img_id (int): the id of the image to associate the annotations
+            mask_logits (np.ndarray): the logits from the semantic model
+            start_index (int, optional): the index to start generating the coco polygons.
+                Normally, 0 encodes the background. Defaults to 1.
+
+        Returns:
+            List[int]: [the idx of the annotations added]]
+        """
+        masks = np.argmax(mask_logits, axis=1)
+        probs = sigmoid(mask_logits)
+        return self.add_semantic_annotation(img_id, masks, probs, start_index)

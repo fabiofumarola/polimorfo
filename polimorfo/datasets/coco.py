@@ -459,11 +459,12 @@ class CocoDataset():
         """load an image from the idx
 
         Args:
-            idx ([type]): the idx of the image
+            idx ([int]): the idx of the image 
 
         Returns:
             [Pillow.Image]: []
         """
+
         path = self.__image_folder / self.imgs[idx]['file_name']
         return Image.open(path)
 
@@ -539,7 +540,7 @@ class CocoDataset():
     def add_annotation(self,
                        img_id: int,
                        cat_id: int,
-                       segmentation: Any,
+                       segmentation: List[List[int]],
                        area: float,
                        bbox: List,
                        is_crowd: int,
@@ -549,7 +550,7 @@ class CocoDataset():
         Args:
             img_id (int): [description]
             cat_id (int): [description]
-            segmentation (Any): [description]
+            segmentation (List[List[int]]): [description]
             area (float): [description]
             bbox (List): [description]
             is_crowd (int): [description]
@@ -584,17 +585,18 @@ class CocoDataset():
         return [self.anns[idx] for idx in ann_idxs]
 
     def show_image(self,
-                   img_idx,
-                   anns_idx=None,
+                   img_idx: int = None,
+                   anns_idx: List[int] = None,
                    ax=None,
-                   title=None,
+                   title: str = None,
                    figsize=(18, 6),
                    colors=None) -> plt.Axes:
         """show an image with its annotations
 
         Args:
-            img_idx ([type]): [description]
-            anns_idx ([type], optional): [description]. Defaults to None.
+            img_idx ([int]): the idx of the image to load (Optional: None)
+                in case the value is not specified take a random id
+            anns_idx ([List[int]], optional): [description]. Defaults to None.
             ax ([type], optional): [description]. Defaults to None.
             title ([type], optional): [description]. Defaults to None.
             figsize (tuple, optional): [description]. Defaults to (18, 6).
@@ -602,6 +604,9 @@ class CocoDataset():
         Returns:
             [plt.Axes]: [description]
         """
+        if not img_idx:
+            img_idx = np.random.randint(0, self.img_id)
+
         img = self.load_image(img_idx)
 
         if anns_idx is None:
@@ -650,17 +655,25 @@ class CocoDataset():
 
         return ax
 
-    def show_images(self, img_idxs, num_cols=4, figsize=(32, 32)) -> plt.Figure:
+    def show_images(self,
+                    img_idxs: List[int] = None,
+                    num_cols=4,
+                    figsize=(32, 32)) -> plt.Figure:
         """show the images with their annotations
 
         Args:
-            img_idxs ([type]): [description]
+            img_idxs ([List[int]]): a list of image idxs to display (Optional: None)
+                If None a random sample of 8 images is taken from the db
             num_cols (int, optional): [description]. Defaults to 4.
             figsize (tuple, optional): [description]. Defaults to (32, 32).
 
         Returns:
             plt.Figure: [description]
         """
+        if not img_idxs:
+            img_idxs = np.random.choice(list(self.imgs.keys()), 8,
+                                        False).tolist()
+
         num_rows = len(img_idxs) // num_cols
         fig = plt.figure(figsize=figsize)
 
