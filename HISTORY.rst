@@ -54,7 +54,7 @@ History
 0.8.0 (2020-10-23)
 ------------------
 
-* fixed bud in maskutils.mask_to_polygons
-* add classes to transform the predictions from instance and semantic segmentation in coco format
+* fixed bug in maskutils.mask_to_polygons
+* add class to transform the predictions from instance and semantic segmentation in coco format
 * fixed bug in add_image, add_annotation, add_category
 * make load_image and load_images load random images sampled from the dataset
