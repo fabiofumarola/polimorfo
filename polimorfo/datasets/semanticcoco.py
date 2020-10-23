@@ -1,5 +1,5 @@
 from .coco import CocoDataset
-from typing import Any, List
+from typing import List
 import numpy as np
 import scipy
 from ..utils import maskutils
@@ -12,7 +12,8 @@ def sigmoid(x):
 
 
 class SemanticCocoDataset(CocoDataset):
-    """An extension of the coco dataset to handle the output of a semantic segmentation model
+    """
+    An extension of the coco dataset to handle the output of a semantic segmentation model
 
     """
 
@@ -21,7 +22,8 @@ class SemanticCocoDataset(CocoDataset):
                         masks: np.ndarray,
                         probs: np.ndarray,
                         start_index=1) -> List[int]:
-        """add the annotation from the given masks
+        """
+        add the annotation from the given masks
 
         Args:
             img_id (int): the id of the image to associate the annotations

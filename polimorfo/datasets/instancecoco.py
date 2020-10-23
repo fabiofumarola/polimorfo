@@ -1,5 +1,5 @@
 from .coco import CocoDataset
-from typing import Any, List
+from typing import List
 import numpy as np
 from ..utils import maskutils
 
@@ -11,7 +11,8 @@ def sigmoid(x):
 
 
 class InstanceCoco(CocoDataset):
-    """An extension of the coco dataset to handle the output 
+    """
+    An extension of the coco dataset to handle the output
         of a instance segmentation models such as MaskRCNN
 
     """
@@ -19,7 +20,8 @@ class InstanceCoco(CocoDataset):
     def add_annotations(self, img_id: int, labels: np.ndarray,
                         boxes: np.ndarray, masks: np.ndarray,
                         scores: np.ndarray) -> List[int]:
-        """add the annotations from the given results
+        """
+        add the annotations from the given results
 
         Args:
             img_id (int): the idx of the image to add the annotations
