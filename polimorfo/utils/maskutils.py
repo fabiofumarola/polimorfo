@@ -2,39 +2,24 @@
 import pycocotools.mask as mask_util
 import numpy as np
 from skimage import measure
+import cv2
+
+__all__ = [
+    'mask_to_polygon', 'polygons_to_mask', 'area', 'bbox',
+    'coco_poygons_to_mask'
+]
 
 
-def mask_to_polygons(mask):
-    """convert mask to poyling
-
-    Args:
-        mask (np.ndarray): the mask
-
-    Returns:
-        [np.ndarray, bool]:
-    """
-    if len(mask.shape) == 3:
-        mask = np.squeeze(mask)
-    mask = (mask > 0.5).astype(np.uint8)
-    # cv2.RETR_CCOMP flag retrieves all the contours and arranges them to a 2-level
-    # hierarchy. External contours (boundary) of the object are placed in hierarchy-1.
-    # Internal contours (holes) are placed in hierarchy-2.
-    # cv2.CHAIN_APPROX_NONE flag gets vertices of polygons from contours.
-    mask = np.ascontiguousarray(
-        mask)    # some versions of cv2 does not support incontiguous arr
-    res = measure.find_contours(mask, 0.5)
-    hierarchy = res[-1]
-    if hierarchy is None:    # empty mask
-        return [], False
-    try:
-        has_holes = (hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0
-    except Exception:
-        has_holes = False
-
-    res = res[-2]
-    res = [x.flatten() for x in res]
-    res = [x for x in res if len(x) >= 6]
-    return res, has_holes
+def mask_to_polygon(mask, min_score=0.5):
+    mask = (mask > min_score).astype(np.uint8)
+    mask = cv2.copyMakeBorder(mask, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
+    polygons = cv2.findContours(mask,
+                                cv2.RETR_LIST,
+                                cv2.CHAIN_APPROX_SIMPLE,
+                                offset=(-1, -1))
+    polygons = polygons[0] if len(polygons) == 2 else polygons[1]
+    polygons = [polygon.flatten().tolist() for polygon in polygons]
+    return polygons
 
 
 def polygons_to_mask(polygons, height, width):
@@ -43,7 +28,8 @@ def polygons_to_mask(polygons, height, width):
     return mask_util.decode(rle)[:, :]
 
 
-def area(mask):
+def area(mask, min_score=0.5):
+    mask = (mask > min_score).astype(np.uint8)
     return mask.sum()
 
 

@@ -53,9 +53,11 @@ TODO
 
 - [X] Coco dataset
 - [X] download coco datasets for train and val
-- [ ] add annotations loader and converter
+- [X] add annotations loader and converter
+- [X] add the ability to create dataet from scratch
 - [ ] add voc dataset format
 - [ ]
+
 
 Credits
 -------
