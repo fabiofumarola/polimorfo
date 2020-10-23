@@ -58,3 +58,8 @@ History
 * add class to transform the predictions from instance and semantic segmentation in coco format
 * fixed bug in add_image, add_annotation, add_category
 * make load_image and load_images load random images sampled from the dataset
+
+0.8.1 (2020-10-23)
+------------------
+
+* fixed bug for tqdm when removing a category and its annotations from the dataset
