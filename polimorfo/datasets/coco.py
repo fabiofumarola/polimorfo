@@ -640,7 +640,6 @@ class CocoDataset():
 
         if len(masks):
             masks = np.array(masks)
-            masks = np.moveaxis(masks, 0, -1)
         else:
             masks = None
 

@@ -78,3 +78,7 @@ History
 0.8.4 (2020-10-23)
 ------------------
 * add show bounding boxes
+
+0.8.5 (2020-10-23)
+------------------
+* changed representation for masks from [width, height, labels] to [labels, width, height]

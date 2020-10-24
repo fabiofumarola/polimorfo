@@ -102,6 +102,28 @@ def draw_instances(img: np.ndarray,
                    ax: plt.Axes = None,
                    box_type: BoxType = BoxType.xyxy,
                    only_class_idxs: List[int] = None):
+    """draw the instances from a object detector or an instance segmentation model
+
+    Args:
+        img (np.ndarray): an image with shape (width, height, channels)
+        boxes (np.ndarray): an array of shape (nboxes, 4)
+        labels (np.ndarray): an array of shape (nlabels,)
+        scores (np.ndarray): an array of shape (nscores,)
+        masks (np.ndarray): an array of shape [nmasks, 1, width, height ]
+        idx_class_dict (Dict[int, str]): a dictionary that maps class id to class name
+        title (str, optional): [description]. Defaults to ''.
+        figsize (Tuple, optional): [description]. Defaults to (16, 8).
+        show_boxes (bool, optional): [description]. Defaults to False.
+        show_masks (bool, optional): [description]. Defaults to True.
+        min_score (float, optional): [description]. Defaults to 0.5.
+        colors (List, optional): [description]. Defaults to None.
+        ax (plt.Axes, optional): [description]. Defaults to None.
+        box_type (BoxType, optional): [description]. Defaults to BoxType.xyxy.
+        only_class_idxs (List[int], optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """
     labels_names = create_text_labels(labels, scores, idx_class_dict)
 
     if colors is None:
@@ -132,7 +154,7 @@ def draw_instances(img: np.ndarray,
         if score < min_score:
             continue
         if show_masks:
-            mask = np.squeeze(masks[..., idx])
+            mask = np.squeeze(masks[idx, ...])
         color = colors[label_id]
         box = boxes[idx]
 
@@ -159,7 +181,7 @@ def draw_instances(img: np.ndarray,
         if show_masks:
             text_pos = np.median(mask.nonzero(), axis=1)[::-1]
         else:
-            text_pos = (x + w / 2, y + h / 2)
+            text_pos = (x + 5, y + 5)
 
         horiz_align = "left"
 
