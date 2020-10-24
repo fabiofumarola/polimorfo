@@ -72,5 +72,9 @@ History
 
 0.8.3 (2020-10-23)
 ------------------
-
 * fixed bug in enum for draw instances
+
+
+0.8.4 (2020-10-23)
+------------------
+* add show bounding boxes

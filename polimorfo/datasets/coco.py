@@ -593,7 +593,9 @@ class CocoDataset():
                    ax=None,
                    title: str = None,
                    figsize=(18, 6),
-                   colors=None) -> plt.Axes:
+                   colors=None,
+                   show_boxes=False,
+                   show_masks=True) -> plt.Axes:
         """show an image with its annotations
 
         Args:
@@ -626,42 +628,51 @@ class CocoDataset():
         for ann in anns:
             boxes.append(ann['bbox'])
             labels.append(ann['category_id'])
-            mask = maskutils.polygons_to_mask(ann['segmentation'], img.height,
-                                              img.width)
-            masks.append(mask)
+            if 'segmentation' in ann:
+                mask = maskutils.polygons_to_mask(ann['segmentation'],
+                                                  img.height, img.width)
+                masks.append(mask)
             if 'score' in ann:
-                scores.append(ann['score'])
+                scores.append(float(ann['score']))
 
         if not len(scores):
             scores = [1] * len(anns)
 
-        masks = np.array(masks)
-        masks = np.moveaxis(masks, 0, -1)
+        if len(masks):
+            masks = np.array(masks)
+            masks = np.moveaxis(masks, 0, -1)
+        else:
+            masks = None
 
         if ax is None:
             _, ax = plt.subplots(1, 1)
 
-        class_name_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
+        idx_class_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
         if colors is None:
-            colors = visualizeutils.generate_colormap(len(class_name_dict) + 1)
+            colors = visualizeutils.generate_colormap(len(idx_class_dict) + 1)
 
         visualizeutils.draw_instances(img,
                                       boxes,
                                       labels,
                                       scores,
                                       masks,
-                                      class_name_dict,
+                                      idx_class_dict,
                                       title,
                                       ax=ax,
                                       figsize=figsize,
-                                      colors=colors)
+                                      colors=colors,
+                                      show_boxes=show_boxes,
+                                      show_masks=show_masks,
+                                      box_type=visualizeutils.BoxType.xywh)
 
         return ax
 
     def show_images(self,
                     img_idxs: List[int] = None,
                     num_cols=4,
-                    figsize=(32, 32)) -> plt.Figure:
+                    figsize=(32, 32),
+                    show_masks=True,
+                    show_boxes=False) -> plt.Figure:
         """show the images with their annotations
 
         Args:
@@ -689,7 +700,11 @@ class CocoDataset():
         for i, img_idx in enumerate(img_idxs):
             ax = plt.subplot(gs[i])
             ax.set_aspect('equal')
-            self.show_image(img_idx, ax=ax, colors=colors)
+            self.show_image(img_idx,
+                            ax=ax,
+                            colors=colors,
+                            show_masks=show_masks,
+                            show_boxes=show_boxes)
 
         return fig
 
