@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 from tqdm import tqdm
 from collections import defaultdict
-from typing import List, Any, Tuple
+from typing import Dict, List, Any, Tuple
 import logging
 from PIL import Image
 import numpy as np
@@ -43,7 +43,7 @@ class CocoDataset():
         }]
     """
 
-    def __init__(self, coco_path: str = None, image_path: str = None):
+    def __init__(self, coco_path: str, image_path: str = None):
         """Load a dataset from a coco .json dataset
         Arguments:
                         annotations_path {Path} -- Path to coco dataset
@@ -70,11 +70,15 @@ class CocoDataset():
 
         self.licenses = {}
 
-        if image_path is not None:
+        self.coco_path = Path(coco_path)
+
+        if image_path is None:
+            self.__image_folder = self.coco_path.parent / 'images'
+        else:
             self.__image_folder = Path(image_path)
 
-        if coco_path is not None:
-            with Path(coco_path).open() as f:
+        if self.coco_path.exists():
+            with self.coco_path.open() as f:
                 data = json.load(f)
             assert set(data) == {
                 'annotations', 'categories', 'images', 'info', 'licenses'
@@ -82,11 +86,6 @@ class CocoDataset():
 
             self.info = data['info']
             self.licenses = data['licenses']
-
-            if image_path is None:
-                self.__image_folder = Path(coco_path).parent / 'images'
-            else:
-                self.__image_folder = Path(image_path)
 
             for cat_meta in tqdm(data['categories'], desc='load categories'):
                 if cat_meta['id'] > self.cat_id:
@@ -107,7 +106,7 @@ class CocoDataset():
             self.ann_id += 1
 
     def copy(self):
-        new_coco = CocoDataset(image_path=self.__image_folder)
+        new_coco = CocoDataset('fake.json', image_path=self.__image_folder)
         new_coco.cats = copy.deepcopy(self.cats)
         new_coco.imgs = copy.deepcopy(self.imgs)
         new_coco.anns = copy.deepcopy(self.anns)
@@ -405,7 +404,7 @@ class CocoDataset():
             'annotations': list(self.anns.values()),
         }
 
-    def dump(self, path, exp_format: ExportFormat = ExportFormat.coco):
+    def dump(self, path=None, exp_format: ExportFormat = ExportFormat.coco):
         """dump the dataset annotations and the images to the given path
 
         Args:
@@ -416,7 +415,10 @@ class CocoDataset():
         Raises:
             ValueError: [description]
         """
-        path = Path(path)
+        if path is None:
+            path = self.coco_path
+        else:
+            path = Path(path)
 
         if exp_format.value == ExportFormat.coco.value:
             with open(path, 'w') as fp:
@@ -615,8 +617,18 @@ class CocoDataset():
         self.ann_id += 1
         return self.ann_id - 1
 
-    def crop_image(self, img_idx, bbox: Tuple[float, float, float, float],
-                   dst_path: Path):
+    def crop_image(self, img_idx: int, bbox: Tuple[float, float, float, float],
+                   dst_path: Path) -> str:
+        """crop the image id with respect the given bounding box to the specified path
+
+        Args:
+            img_idx (int): the id of the image
+            bbox (Tuple[float, float, float, float]): a bounding box with the format [Xmin, Ymin, Xmax, Ymax]
+            dst_path (Path): the path where the image has to be saved
+
+        Returns:
+            str: the name of the image
+        """
         dst_path = Path(dst_path)
         img_meta = self.imgs[img_idx]
         img = self.load_image(img_idx)
@@ -625,6 +637,17 @@ class CocoDataset():
         return img_meta['file_name']
 
     def enlarge_box(self, bbox, height, width, pxls=10):
+        """enlarge a given box of pxls pixels
+
+        Args:
+            bbox ([type]): a tuple, list of np.arry of shape (4,)
+            height (int): the height of the image
+            width (int): the width of the image
+            pxls (int, optional): the number of pixels to add. Defaults to 10.
+
+        Returns:
+            boundingbox: the enlarged bounding box
+        """
         bbox = bbox.copy()
         bbox[0] = np.clip(bbox[0] - pxls, 0, width)
         bbox[1] = np.clip(bbox[1] - pxls, 0, height)
@@ -632,7 +655,18 @@ class CocoDataset():
         bbox[3] = np.clip(bbox[3] + pxls, 0, height)
         return bbox
 
-    def move_annotation(self, idx, bbox: Tuple[float, float, float, float]):
+    def move_annotation(self, idx: int, bbox: Tuple[float, float, float,
+                                                    float]) -> Dict:
+        """move the bounding box and the segments of the annotation with respect to given bounding box
+
+        Args:
+            idx (int): the annotation idx
+            bbox (Tuple[float, float, float, float]): the bounding box
+
+        Returns:
+            Dict: a dictioary with the keys iscrowd, bboox, area, segmentation
+        """
+
         ann_meta = self.anns[idx]
         img_meta = self.imgs[ann_meta['image_id']]
         img_bbox = np.array([0, 0, img_meta['width'], img_meta['height']])
@@ -659,7 +693,7 @@ class CocoDataset():
             'iscrowd': ann_meta['iscrowd'],
             'bbox': bbox_moved,
             'area': ann_meta['area'],
-            'segmentations': segmentations_moved
+            'segmentation': segmentations_moved
         }
 
         return ann_meta_moved

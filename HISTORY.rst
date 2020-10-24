@@ -87,3 +87,7 @@ History
 ------------------
 * added method to crop images
 * added method to move annotations with respect a bounding box
+
+0.8.7 (2020-10-24)
+------------------
+* support fully creation o a new dataset

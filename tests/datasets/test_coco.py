@@ -3,6 +3,7 @@ from pytest import fixture
 from pathlib import Path
 import shutil
 from polimorfo.datasets import CocoDataset, ExportFormat
+import os
 
 BASE_PATH = Path(__file__).parent.parent / 'data'
 
@@ -56,7 +57,8 @@ def test_dump_segmentation(coco_test):
 
 
 def test_create_dataset():
-    ds = CocoDataset()
+    annotations_path = BASE_PATH / 'new_coco.json'
+    ds = CocoDataset(annotations_path)
 
     cat_id = ds.add_category('dog', 'animal')
     img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix())
@@ -65,9 +67,17 @@ def test_create_dataset():
     assert len(ds) == 1
     assert len(ds.anns) == 1
 
+    ds.dump()
+    assert annotations_path.exists()
+
+    with open(annotations_path, 'r') as f:
+        assert len(f.readline()) > 0
+
+    os.remove(annotations_path)
+
 
 def test_create_dataset_existing():
-    ds = CocoDataset()
+    ds = CocoDataset(BASE_PATH / 'new_coco.json')
 
     cat_id = ds.add_category('dog', 'animal')
     img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix())
@@ -85,7 +95,7 @@ def test_create_dataset_existing():
 
 
 def test_remove_categories():
-    ds = CocoDataset()
+    ds = CocoDataset(BASE_PATH / 'new_coco.json')
     cat_id = ds.add_category('dog', 'animal')
     assert len(ds.cats) == 1
     ds.remove_categories([cat_id])
@@ -94,7 +104,7 @@ def test_remove_categories():
 
 
 def test_remove_categories_and_annotations():
-    ds = CocoDataset()
+    ds = CocoDataset(BASE_PATH / 'new_coco.json')
     cat_id = ds.add_category('dog', 'animal')
     img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix())
     ds.add_annotation(img_id, cat_id, [1, 2, 3, 4, 5], 10, [0, 0, 256, 256], 0)
