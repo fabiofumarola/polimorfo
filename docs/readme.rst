@@ -58,10 +58,6 @@ TODO
 - [ ] add voc dataset format
 - [ ]
 
-HISTORY 
-======
-
-.. include:: HISTORY.rst
 
 Credits
 -------

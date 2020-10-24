@@ -2,15 +2,16 @@ import colorsys
 import random
 import matplotlib.colors as mplc
 import numpy as np
+from numpy.core.shape_base import block
 from skimage.measure import find_contours
 from matplotlib.patches import Polygon, Rectangle
 import matplotlib
 import matplotlib.pyplot as plt
-from typing import List
+from typing import List, Dict, Tuple
 from enum import Enum
 
 
-def change_color_brightness(color, brightness_factor):
+def change_color_brightness(color: Tuple, brightness_factor: float):
     """
     Depending on the brightness_factor, gives a lighter or darker color i.e. a color with
     less or more saturation than the original color.
@@ -36,13 +37,13 @@ def change_color_brightness(color, brightness_factor):
     return modified_color
 
 
-def draw_text(ax,
-              text,
-              position,
-              font_size,
-              color="g",
-              horizontal_alignment="center",
-              rotation=0):
+def draw_text(ax: plt.Axes,
+              text: str,
+              position: Tuple,
+              font_size: float,
+              color: str = "g",
+              horizontal_alignment: str = "center",
+              rotation: int = 0):
     """
     Args:
         text (str): class label
@@ -86,27 +87,31 @@ class BoxType(Enum):
     xywh = 2
 
 
-def draw_instances(img,
-                   boxes,
-                   labels,
-                   scores,
-                   masks,
-                   class_name_dict,
-                   title='',
-                   figsize=(16, 8),
-                   show_boxes=False,
-                   show_masks=True,
-                   min_score=0.5,
-                   colors=None,
-                   ax=None,
-                   box_type: BoxType = BoxType.xyxy):
-    labels_names = create_text_labels(labels, scores, class_name_dict)
+def draw_instances(img: np.ndarray,
+                   boxes: np.ndarray,
+                   labels: np.ndarray,
+                   scores: np.ndarray,
+                   masks: np.ndarray,
+                   idx_class_dict: Dict[int, str],
+                   title: str = '',
+                   figsize: Tuple = (16, 8),
+                   show_boxes: bool = False,
+                   show_masks: bool = True,
+                   min_score: float = 0.5,
+                   colors: List = None,
+                   ax: plt.Axes = None,
+                   box_type: BoxType = BoxType.xyxy,
+                   only_class_idxs: List[int] = None):
+    labels_names = create_text_labels(labels, scores, idx_class_dict)
 
     if colors is None:
-        colors = generate_colormap(len(class_name_dict) + 1)
+        colors = generate_colormap(len(idx_class_dict) + 1)
 
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
+
+    if only_class_idxs is None:
+        only_class_idxs = list(idx_class_dict.keys())
 
     width, height = img.size
     ax.set_ylim(height + 10, -10)
@@ -118,6 +123,10 @@ def draw_instances(img,
 
     for idx in range(len(labels)):
         label_id = labels[idx]
+
+        if label_id not in only_class_idxs:
+            continue
+
         label_name = labels_names[idx]
         score = scores[idx]
         if score < min_score:
@@ -176,7 +185,7 @@ def draw_instances(img,
     return ax
 
 
-def generate_colormap(nelems, scaled=False, bright=True):
+def generate_colormap(nelems: int, scaled: bool = False, bright: bool = True):
     # Generate colors for drawing bounding boxes.
     brightness = 1. if bright else .7
     hsv_tuples = [(x / nelems, 1., brightness) for x in range(nelems)]
@@ -189,16 +198,17 @@ def generate_colormap(nelems, scaled=False, bright=True):
     return colors
 
 
-def create_text_labels(classes, scores, class_name_dict):
+def create_text_labels(classes: List[int], scores: List[float],
+                       idx_class_dict: Dict[int, str]):
     """
     Args:
         classes (list[int] or None):
         scores (list[float] or None):
-        class_names (list[str] or None):
+        idx_class_dict (Dict[int, str] or None):
     Returns:
-        list[str] or None
+        list[str]
     """
-    labels = [class_name_dict[i] for i in classes]
+    labels = [idx_class_dict[i] for i in classes]
     labels = [
         "{} {:.0f}%".format(label, score * 100)
         for label, score in zip(labels, scores)
@@ -234,13 +244,13 @@ def draw_segmentation_map(mask: np.ndarray, colors: List[str]):
 
 
 def draw_segmentation(
-        img,
-        mask,
-        idx_name_dict,
-        colors=None,
-        title='',
-        ax=None,
-        figsize=(16, 8),
+        img: np.ndarray,
+        mask: np.ndarray,
+        idx_name_dict: Dict[int, str],
+        colors: List = None,
+        title: str = '',
+        ax: plt.Axes = None,
+        figsize: Tuple[int, int] = (16, 8),
 ):
     if colors is None:
         colors = generate_colormap(len(idx_name_dict) + 1)
