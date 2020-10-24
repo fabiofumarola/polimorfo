@@ -12,6 +12,7 @@ before_install:
 branches:
   only:
     - master
+    - v*
 
 install: pip install -U tox-travis
 script: tox
