@@ -68,3 +68,4 @@ History
 ------------------
 
 * removed the prefix jpg when saving masks
+* update draw instance to draw only bounding boxes

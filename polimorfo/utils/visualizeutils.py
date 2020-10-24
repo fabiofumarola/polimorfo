@@ -7,6 +7,7 @@ from matplotlib.patches import Polygon, Rectangle
 import matplotlib
 import matplotlib.pyplot as plt
 from typing import List
+from enum import Enum
 
 
 def change_color_brightness(color, brightness_factor):
@@ -80,6 +81,11 @@ def draw_text(ax,
     )
 
 
+class BoxType(Enum):
+    xyxy = 1
+    xywh = 2
+
+
 def draw_instances(img,
                    boxes,
                    labels,
@@ -89,9 +95,11 @@ def draw_instances(img,
                    title='',
                    figsize=(16, 8),
                    show_boxes=False,
+                   show_masks=True,
                    min_score=0.5,
                    colors=None,
-                   ax=None):
+                   ax=None,
+                   box_type: BoxType = BoxType.xyxy):
     labels_names = create_text_labels(labels, scores, class_name_dict)
 
     if colors is None:
@@ -114,14 +122,21 @@ def draw_instances(img,
         score = scores[idx]
         if score < min_score:
             continue
-        mask = np.squeeze(masks[..., idx])
+        if show_masks:
+            mask = np.squeeze(masks[..., idx])
         color = colors[label_id]
         box = boxes[idx]
 
-        x0, y0, x1, y1 = box
+        if box_type == BoxType.xyxy:
+            x0, y0, x1, y1 = box
+            x, y, w, h = x0, y0, x1 - x0, y1 - y0
+        else:
+            x, y, w, h = box
 
         if show_boxes:
-            p = Rectangle((x0, y0), (x1 - x0), (y1 - y0),
+            p = Rectangle((x, y),
+                          w,
+                          h,
                           linewidth=2,
                           alpha=0.7,
                           linestyle="dashed",
@@ -132,26 +147,31 @@ def draw_instances(img,
         # add the caption
         # draw text in the center (defined by median) when box is not drawn
         # median is less sensitive to outliers.
-        text_pos = np.median(mask.nonzero(), axis=1)[::-1]
+        if show_masks:
+            text_pos = np.median(mask.nonzero(), axis=1)[::-1]
+        else:
+            text_pos = (x + w / 2, y + h / 2)
+
         horiz_align = "left"
 
         lighter_color = change_color_brightness(color, brightness_factor=0.7)
         font_size = 10
         draw_text(ax, label_name, text_pos, font_size, lighter_color,
                   horiz_align)
-        padded_mask = np.zeros((mask.shape[0] + 2, mask.shape[1] + 2),
-                               dtype=np.float32)
-        padded_mask[1:-1, 1:-1] = mask
-        contours = find_contours(padded_mask, 0.5)
-        for verts in contours:
-            # Subtract the padding and flip (y, x) to (x, y)
-            verts = np.fliplr(verts) - 1
-            p = Polygon(verts,
-                        facecolor=color,
-                        edgecolor=color,
-                        fill=True,
-                        alpha=.5)
-            ax.add_patch(p)
+        if show_masks:
+            padded_mask = np.zeros((mask.shape[0] + 2, mask.shape[1] + 2),
+                                   dtype=np.float32)
+            padded_mask[1:-1, 1:-1] = mask
+            contours = find_contours(padded_mask, 0.5)
+            for verts in contours:
+                # Subtract the padding and flip (y, x) to (x, y)
+                verts = np.fliplr(verts) - 1
+                p = Polygon(verts,
+                            facecolor=color,
+                            edgecolor=color,
+                            fill=True,
+                            alpha=.5)
+                ax.add_patch(p)
     ax.imshow(out_image)
     return ax
 
