@@ -69,3 +69,8 @@ History
 
 * removed the prefix jpg when saving masks
 * update draw instance to draw only bounding boxes
+
+0.8.3 (2020-10-23)
+------------------
+
+* fixed bug in enum for draw instances

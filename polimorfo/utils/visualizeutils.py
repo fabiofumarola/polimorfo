@@ -127,7 +127,7 @@ def draw_instances(img,
         color = colors[label_id]
         box = boxes[idx]
 
-        if box_type == BoxType.xyxy:
+        if box_type.value == BoxType.xyxy.value:
             x0, y0, x1, y1 = box
             x, y, w, h = x0, y0, x1 - x0, y1 - y0
         else:
