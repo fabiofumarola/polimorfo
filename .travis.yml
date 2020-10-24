@@ -9,6 +9,10 @@ python:
 before_install:
   - sudo apt-get install python-opencv
 
+branches:
+  only:
+    - master
+
 install: pip install -U tox-travis
 script: tox
 deploy:
