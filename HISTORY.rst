@@ -70,15 +70,20 @@ History
 * removed the prefix jpg when saving masks
 * update draw instance to draw only bounding boxes
 
-0.8.3 (2020-10-23)
+0.8.3 (2020-10-24)
 ------------------
 * fixed bug in enum for draw instances
 
 
-0.8.4 (2020-10-23)
+0.8.4 (2020-10-24)
 ------------------
 * add show bounding boxes
 
-0.8.5 (2020-10-23)
+0.8.5 (2020-10-24)
 ------------------
 * changed representation for masks from [width, height, labels] to [labels, width, height]
+
+0.8.6 (2020-10-24)
+------------------
+* added method to crop images
+* added method to move annotations with respect a bounding box

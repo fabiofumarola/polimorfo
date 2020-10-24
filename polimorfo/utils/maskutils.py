@@ -42,15 +42,15 @@ def bbox(polygons, height, width):
     return bbox
 
 
-def coco_poygons_to_mask(segmentations, heigth, width):
+def coco_poygons_to_mask(segmentations, height, width):
     masks = []
     for polygons in segmentations:
-        mask = polygons_to_mask(polygons, heigth, width)
+        mask = polygons_to_mask(polygons, height, width)
         # mask = np.any(mask, axis=2)
         masks.append(mask)
 
     if masks:
         masks = np.stack(masks, axis=0)
     else:
-        masks = np.zeros((heigth, width), dtype=np.uint8)
+        masks = np.zeros((height, width), dtype=np.uint8)
     return masks

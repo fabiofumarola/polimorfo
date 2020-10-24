@@ -170,6 +170,19 @@ class CocoDataset():
         for img_meta in tqdm(self.imgs.values()):
             img_meta['file_name'] = func(img_meta['file_name'])
 
+    def get_annotatations(self, img_idx: int) -> List:
+        """returns the annotations of the given image
+
+        Args:
+            img_idx (int): the image idx
+
+        Returns:
+            List: a list of the annotations in coco format
+        """
+        return [
+            ann for idx, ann in self.anns.items() if ann['image_id'] == img_idx
+        ]
+
     def compute_area(self):
         """compute the area of the annotations
         """
@@ -439,22 +452,43 @@ class CocoDataset():
             [type]: [description]
         """
         img_meta = self.imgs[img_idx]
-        width, heigth = img_meta['width'], img_meta['height']
+        width, height = img_meta['width'], img_meta['height']
         anns = [ann for ann in self.anns.values() if ann['image_id'] == img_idx]
         if cats_idx:
             anns = [ann for ann in anns if ann['category_id'] in cats_idx]
         segmentations = [obj['segmentation'] for obj in anns]
         if segmentations:
-            masks = maskutils.coco_poygons_to_mask(segmentations, heigth, width)
+            masks = maskutils.coco_poygons_to_mask(segmentations, height, width)
             cats = np.array([obj['category_id'] for obj in anns],
                             dtype=masks.dtype)
+            target = np.zeros((height, width), dtype=np.uint8)
+            already_written = []
 
-            target = np.max((masks * cats[:, None, None]), axis=0)
-            # discard overlapping instances
-            target[masks.sum(0) > 1] = 0
+            for src_idx in range(len(masks)):
+                src_mask = masks[src_idx]
+                order_list = [(cats[src_idx], src_mask)]
+                for dst_idx in range(len(masks)):
+                    if dst_idx == src_idx:
+                        continue
+                    if dst_idx in already_written and src_idx in already_written:
+                        continue
+                    dst_mask = masks[dst_idx]
+                    src_plus_dst = src_mask + dst_mask
+                    count_intersection = np.count_nonzero(src_plus_dst == 2)
+                    if count_intersection == dst_mask.sum():
+                        order_list.append((cats[dst_idx], dst_mask))
+
+                order_list = sorted(order_list,
+                                    key=lambda idx_mask: idx_mask[1].sum(),
+                                    reverse=True)
+                for cat_id, mask in order_list:
+                    if cat_id is already_written:
+                        continue
+                    target[mask == 1] = cat_id
+                    already_written.append(cat_id)
+
         else:
-            target = np.zeros((heigth, width), dtype=np.uint8)
-
+            target = np.zeros((height, width), dtype=np.uint8)
         target = Image.fromarray(target)
         return target
 
@@ -580,6 +614,55 @@ class CocoDataset():
         self.anns[self.ann_id] = metadata
         self.ann_id += 1
         return self.ann_id - 1
+
+    def crop_image(self, img_idx, bbox: Tuple[float, float, float, float],
+                   dst_path: Path):
+        dst_path = Path(dst_path)
+        img_meta = self.imgs[img_idx]
+        img = self.load_image(img_idx)
+        img_cropped = img.crop(bbox)
+        img_cropped.save(dst_path / img_meta['file_name'])
+        return img_meta['file_name']
+
+    def enlarge_box(self, bbox, height, width, pxls=10):
+        bbox = bbox.copy()
+        bbox[0] = np.clip(bbox[0] - pxls, 0, width)
+        bbox[1] = np.clip(bbox[1] - pxls, 0, height)
+        bbox[2] = np.clip(bbox[2] + pxls, 0, width)
+        bbox[3] = np.clip(bbox[3] + pxls, 0, height)
+        return bbox
+
+    def move_annotation(self, idx, bbox: Tuple[float, float, float, float]):
+        ann_meta = self.anns[idx]
+        img_meta = self.imgs[ann_meta['image_id']]
+        img_bbox = np.array([0, 0, img_meta['width'], img_meta['height']])
+
+        # compute the shift for x and y
+        diff_bbox = img_bbox - np.array(bbox)
+        move_width, move_height = diff_bbox[:2]
+
+        # move bbox
+        bbox_moved = copy.deepcopy(ann_meta['bbox'])
+        bbox_moved[0] += move_width
+        bbox_moved[1] += move_height
+
+        # move segmentations
+        segmentations_moved = copy.deepcopy(ann_meta['segmentation'])
+        for segmentation in segmentations_moved:
+            for i in range(len(segmentation)):
+                if i % 2 == 0:
+                    segmentation[i] += move_width
+                else:
+                    segmentation[i] += move_height
+
+        ann_meta_moved = {
+            'iscrowd': ann_meta['iscrowd'],
+            'bbox': bbox_moved,
+            'area': ann_meta['area'],
+            'segmentations': segmentations_moved
+        }
+
+        return ann_meta_moved
 
     def load_anns(self, ann_idxs):
         if isinstance(ann_idxs, int):

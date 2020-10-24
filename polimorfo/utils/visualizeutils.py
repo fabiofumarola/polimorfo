@@ -3,7 +3,7 @@ import random
 import matplotlib.colors as mplc
 import numpy as np
 from numpy.core.shape_base import block
-from skimage.measure import find_contours
+from skimage import measure
 from matplotlib.patches import Polygon, Rectangle
 import matplotlib
 import matplotlib.pyplot as plt
@@ -193,7 +193,7 @@ def draw_instances(img: np.ndarray,
             padded_mask = np.zeros((mask.shape[0] + 2, mask.shape[1] + 2),
                                    dtype=np.float32)
             padded_mask[1:-1, 1:-1] = mask
-            contours = find_contours(padded_mask, 0.5)
+            contours = measure.find_contours(padded_mask, 0.5)
             for verts in contours:
                 # Subtract the padding and flip (y, x) to (x, y)
                 verts = np.fliplr(verts) - 1
