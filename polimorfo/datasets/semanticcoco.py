@@ -55,7 +55,7 @@ class SemanticCocoDataset(CocoDataset):
                 np.unique(masks)[start_index:], start_index):
             class_mask = (masks == class_idx).astype(np.uint8)
             class_probs = probs[i]
-            cat_id = class_idx
+            cat_id = int(class_idx)
 
             if cat_id not in self.cats:
                 raise ValueError(f'cats {cat_id} not in dataset categories')
@@ -68,8 +68,8 @@ class SemanticCocoDataset(CocoDataset):
                 polygons = maskutils.mask_to_polygon(group_mask)
                 try:
                     bbox = maskutils.bbox(polygons, *masks.shape).tolist()
-                    area = maskutils.area(group_mask)
-                    score = np.mean(class_mask * class_probs)
+                    area = int(maskutils.area(group_mask))
+                    score = float(np.mean(class_mask * class_probs))
                     annotation_ids.append(
                         self.add_annotation(img_id, cat_id, polygons, area,
                                             bbox, 0, score))
