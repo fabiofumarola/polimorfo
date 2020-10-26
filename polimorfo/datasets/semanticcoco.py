@@ -66,12 +66,15 @@ class SemanticCocoDataset(CocoDataset):
             for group_idx in range(1, n_groups + 1):
                 group_mask = (groups == group_idx).astype(np.uint8)
                 polygons = maskutils.mask_to_polygon(group_mask)
-                bbox = maskutils.bbox(polygons, *masks.shape)
-                area = maskutils.area(group_mask)
-                score = np.mean(class_mask * class_probs)
-                annotation_ids.append(
-                    self.add_annotation(img_id, cat_id, polygons, area, bbox, 0,
-                                        score))
+                try:
+                    bbox = maskutils.bbox(polygons, *masks.shape)
+                    area = maskutils.area(group_mask)
+                    score = np.mean(class_mask * class_probs)
+                    annotation_ids.append(
+                        self.add_annotation(img_id, cat_id, polygons, area,
+                                            bbox, 0, score))
+                except Exception:
+                    pass
             return annotation_ids
 
     def add_annotations_from_scores(self,

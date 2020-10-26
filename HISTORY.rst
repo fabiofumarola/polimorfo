@@ -96,3 +96,8 @@ History
 0.88-11 (2020-10-26)
 --------------------
 * fixed vairous bugs
+
+0.88-12 (2020-10-26)
+--------------------
+* fixed bug when the size of the segments is `equal_to_4`_ 
+.. _equal_to_4 https://github.com/cocodataset/cocoapi/issues/139`_
