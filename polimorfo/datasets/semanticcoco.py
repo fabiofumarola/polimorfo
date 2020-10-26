@@ -41,6 +41,9 @@ class SemanticCocoDataset(CocoDataset):
             List[int]: [the idx of the annotations added]
         """
 
+        if np.count_nonzero(masks) == 0:
+            return None
+
         if len(masks.shape) != 2:
             raise ValueError('masks.shape should equal to 2')
 

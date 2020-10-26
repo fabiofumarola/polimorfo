@@ -91,3 +91,8 @@ History
 0.8.7 (2020-10-24)
 ------------------
 * support fully creation o a new dataset
+
+
+0.88-11 (2020-10-26)
+--------------------
+* fixed vairous bugs
