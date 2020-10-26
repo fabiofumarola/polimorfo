@@ -93,11 +93,15 @@ History
 * support fully creation o a new dataset
 
 
-0.88-11 (2020-10-26)
---------------------
+0.8.8-11 (2020-10-26)
+---------------------
 * fixed vairous bugs
 
-
-0.88-12 (2020-10-26)
+0.8.12 (2020-10-26)
 --------------------
 * fixed bug when the size of the segments is equal to 4
+
+
+0.8.13 (2020-10-26)
+--------------------
+* fixed bug in json dump to serialize numpy array

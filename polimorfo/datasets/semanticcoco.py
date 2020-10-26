@@ -67,7 +67,7 @@ class SemanticCocoDataset(CocoDataset):
                 group_mask = (groups == group_idx).astype(np.uint8)
                 polygons = maskutils.mask_to_polygon(group_mask)
                 try:
-                    bbox = maskutils.bbox(polygons, *masks.shape)
+                    bbox = maskutils.bbox(polygons, *masks.shape).tolist()
                     area = maskutils.area(group_mask)
                     score = np.mean(class_mask * class_probs)
                     annotation_ids.append(
