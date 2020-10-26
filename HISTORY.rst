@@ -97,6 +97,7 @@ History
 --------------------
 * fixed vairous bugs
 
+
 0.88-12 (2020-10-26)
 --------------------
 * fixed bug when the size of the segments is `equal_to_4`_ 
