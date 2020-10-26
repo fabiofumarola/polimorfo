@@ -88,4 +88,4 @@ class SemanticCocoDataset(CocoDataset):
         """
         masks = np.argmax(mask_logits, axis=1)
         probs = sigmoid(mask_logits)
-        return self.add_semantic_annotation(img_id, masks, probs, start_index)
+        return self.add_annotations(img_id, masks, probs, start_index)

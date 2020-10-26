@@ -558,7 +558,8 @@ class CocoDataset():
         """add an image to the dataset
 
         Args:
-            image_path (str): the name of the file
+            image_path (str): the actual path where the image is place. 
+                It need that to compute the image metadata
 
         Returns:
             int: the img id
