@@ -86,6 +86,6 @@ class SemanticCocoDataset(CocoDataset):
         Returns:
             List[int]: [the idx of the annotations added]]
         """
-        masks = np.argmax(mask_logits, axis=1)
+        masks = np.argmax(mask_logits, axis=0)
         probs = sigmoid(mask_logits)
         return self.add_annotations(img_id, masks, probs, start_index)
