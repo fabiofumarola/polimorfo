@@ -1,8 +1,9 @@
 from pathlib import Path
 import json
+from numpy.lib.utils import deprecate
 from tqdm import tqdm
 from collections import defaultdict
-from typing import Dict, List, Any, Tuple
+from typing import DefaultDict, Dict, List, Any, Tuple
 import logging
 from PIL import Image
 import numpy as np
@@ -17,12 +18,7 @@ from enum import Enum
 
 log = logging.getLogger(__name__)
 
-__all__ = ['CocoDataset', 'ExportFormat']
-
-
-class ExportFormat(Enum):
-    coco = 1
-    segmentation = 2
+__all__ = ['CocoDataset']
 
 
 class CocoDataset():
@@ -42,6 +38,10 @@ class CocoDataset():
         "id": int, "name": str, "supercategory": str,
         }]
     """
+
+    class ExportFormat(Enum):
+        coco = 1
+        segmentation = 2
 
     def __init__(self, coco_path: str, image_path: str = None):
         """Load a dataset from a coco .json dataset
@@ -105,8 +105,11 @@ class CocoDataset():
                 self.anns[ann_meta['id']] = ann_meta
             self.ann_id += 1
 
+            self.index = Index(self)
+
     def copy(self):
-        new_coco = CocoDataset('fake.json', image_path=self.__image_folder)
+        new_coco = CocoDataset('fake.json',
+                               image_path=self.__image_folder.as_posix())
         new_coco.cats = copy.deepcopy(self.cats)
         new_coco.imgs = copy.deepcopy(self.imgs)
         new_coco.anns = copy.deepcopy(self.anns)
@@ -160,6 +163,8 @@ class CocoDataset():
         self.imgs = new_imgs
         self.anns = new_anns
 
+        self.index = Index(self)
+
     def update_images_path(self, func):
         """update the images path
         Args:
@@ -169,7 +174,7 @@ class CocoDataset():
         for img_meta in tqdm(self.imgs.values()):
             img_meta['file_name'] = func(img_meta['file_name'])
 
-    def get_annotatations(self, img_idx: int) -> List:
+    def get_annotations(self, img_idx: int) -> List:
         """returns the annotations of the given image
 
         Args:
@@ -178,9 +183,10 @@ class CocoDataset():
         Returns:
             List: a list of the annotations in coco format
         """
-        return [
-            ann for idx, ann in self.anns.items() if ann['image_id'] == img_idx
-        ]
+        anns_idx = self.index.img_to_anns.get(img_idx)
+        if anns_idx is None:
+            return []
+        return [self.anns[idx] for idx in anns_idx]
 
     def compute_area(self):
         """compute the area of the annotations
@@ -293,13 +299,9 @@ class CocoDataset():
         Returns:
             list -- a list of tuples category number of images
         """
-        cat_images_dict = defaultdict(set)
-        for ann_meta in self.anns.values():
-            cat_images_dict[ann_meta['category_id']].add(ann_meta['image_id'])
-
         return {
-            self.cats[idx]['name']: len(images)
-            for idx, images in cat_images_dict.items()
+            cat_id: len(imgs_list)
+            for cat_id, imgs_list in self.index.cat_to_imgs.items()
         }
 
     def cats_annotations_count(self):
@@ -307,13 +309,9 @@ class CocoDataset():
         Returns:
             list -- a list of tuples (category_name, number of annotations)
         """
-        cat_anns_dict = defaultdict(set)
-        for ann_meta in self.anns.values():
-            cat_anns_dict[ann_meta['category_id']].add(ann_meta['id'])
-
         return {
-            self.cats[idx]['name']: len(anns)
-            for idx, anns in cat_anns_dict.items()
+            cat_id: len(anns_list)
+            for cat_id, anns_list in self.index.cat_to_anns.items()
         }
 
     def keep_categories(self, ids: List[int], remove_images: bool = False):
@@ -344,18 +342,18 @@ class CocoDataset():
         Arguments:
             image_idxs {List[int]} -- [description]
         """
-        image_idxs = set(image_idxs)
+        set_image_idxs = set(image_idxs)
 
         self.imgs = {
             idx: img_meta
             for idx, img_meta in self.imgs.items()
-            if idx not in image_idxs
+            if idx not in set_image_idxs
         }
 
         self.anns = {
             idx: ann_meta
             for idx, ann_meta in self.anns.items()
-            if ann_meta['image_id'] not in image_idxs
+            if ann_meta['image_id'] not in set_image_idxs
         }
 
         catnames_to_remove = {
@@ -381,9 +379,9 @@ class CocoDataset():
             img_ann_ids {Dict[int, List[Int]]} -- the dictionary of
                 image id annotations ids to remove
         """
-        ids = set(ids)
+        set_ids = set(ids)
         self.anns = {
-            idx: ann for idx, ann in self.anns.items() if idx not in ids
+            idx: ann for idx, ann in self.anns.items() if idx not in set_ids
         }
 
         # remove the images with no annotations
@@ -420,10 +418,10 @@ class CocoDataset():
         else:
             path = Path(path)
 
-        if exp_format.value == ExportFormat.coco.value:
+        if exp_format.value == self.ExportFormat.coco.value:
             with open(path, 'w') as fp:
                 json.dump(self.dumps(), fp)
-        elif exp_format.value is ExportFormat.segmentation.value:
+        elif exp_format.value is self.ExportFormat.segmentation.value:
             # create a segmentation folder
             if path:
                 segments_path = path
@@ -525,7 +523,7 @@ class CocoDataset():
         idxs = np.random.choice(list(self.imgs.keys()), sample)
 
         for idx in tqdm(idxs):
-            img = self.load_image(idx)
+            img = np.array(self.load_image(idx))
             for i, color in enumerate(channels.keys()):
                 channels[color] += np.mean(img[..., i].flatten())
 
@@ -863,3 +861,17 @@ class CocoDataset():
         test_ds.remove_images(train_img_ids + val_img_ids)
 
         return train_ds, val_ds, test_ds
+
+
+class Index(object):
+
+    def __init__(self, coco: CocoDataset) -> None:
+        self.cat_to_imgs: DefaultDict[int, List[int]] = defaultdict(list)
+        self.img_to_anns: DefaultDict[int, List[int]] = defaultdict(list)
+        self.cat_to_anns: DefaultDict[int, List[int]] = defaultdict(list)
+
+        for idx, ann_meta in coco.anns.items():
+            self.cat_to_imgs[ann_meta['category_id']].append(
+                (ann_meta['image_id']))
+            self.img_to_anns[ann_meta['image_id']].append((idx))
+            self.cat_to_anns[ann_meta['category_id']].append(idx)
