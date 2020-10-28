@@ -75,7 +75,8 @@ class SemanticCocoDataset(CocoDataset):
                 area = int(maskutils.area(group_mask))
                 if area == 0:
                     continue
-                score = float(np.mean(group_mask * class_probs))
+                segment_probs_mask = group_mask * class_probs
+                score = float(np.mean(segment_probs_mask[segment_probs_mask > 0]))
                 annotation_ids.append(
                     self.add_annotation(img_id, cat_id, polygons, area, bbox, 0,
                                         score))
