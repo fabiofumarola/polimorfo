@@ -1,7 +1,5 @@
 from pathlib import Path
-from polimorfo.datasets.coco import CocoDataset
 from polimorfo.utils import cocoeval
-import pandas as pd
 
 BASE_PATH = Path(__file__).parent.parent / 'data'
 
@@ -21,7 +19,7 @@ def test_mean_average_precision_and_recall():
     assert mar == 1.
 
 
-def test_mean_average_precision_and_recall():
+def test_mean_average_precision_and_recall_per_class():
     ds_path = BASE_PATH / 'hair_drier_toaster_bear.json'
     df = cocoeval.generate_predictions(ds_path, ds_path)
     class_idx_metrics = cocoeval.mean_average_precision_and_recall_per_class(df)

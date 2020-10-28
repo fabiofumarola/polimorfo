@@ -5,13 +5,17 @@ import numpy as np
 from . import maskutils
 import pandas as pd
 
-__all__ = ['generate_prediction']
+__all__ = [
+    'generate_predictions', 'mean_average_precision_and_recall',
+    'mean_average_precision_and_recall_per_class'
+]
 
 
 def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
                  gt_mask: np.ndarray, img_path: str,
                  gt_class_id: int) -> Tuple[int, List]:
-    """compute the best prediction given the ground truth annotation
+    """
+    compute the best prediction given the ground truth annotation
 
     Args:
         pred_anns (List): the list of the annotations for the image
@@ -52,7 +56,8 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
 
 def generate_predictions(gt_path: str, preds_path: str,
                          **kwargs) -> pd.DataFrame:
-    """create a list that contains the comparison between the predictions
+    """
+    create a list that contains the comparison between the predictions
         and the ground truth to be used to compute all the metrics
 
     Args:
@@ -118,7 +123,8 @@ def mean_average_precision_and_recall(
     prediction_report: pd.DataFrame,
     range_iou: np.ndarray = np.arange(.5, 1., .05)
 ) -> Tuple[float, float]:
-    """compute mean average precision and recall for a given range
+    """
+    compute mean average precision and recall for a given range
 
     Args:
         prediction_report (pd.DataFrame): a dataframe generated using the method
@@ -155,7 +161,8 @@ def mean_average_precision_and_recall_per_class(
     prediction_report: pd.DataFrame,
     range_iou: np.ndarray = np.arange(.5, 1., .05)
 ) -> Dict[int, Tuple[float, float]]:
-    """generate mean average precision and recall for class idx
+    """
+    generate mean average precision and recall for class idx
 
     Args:
         prediction_report (pd.DataFrame): a dataframe generated using the method
