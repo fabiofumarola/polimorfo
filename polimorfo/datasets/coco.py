@@ -118,6 +118,8 @@ class CocoDataset():
         new_coco.ann_id = self.ann_id
         new_coco.licenses = self.licenses
         new_coco.info = self.info
+        new_coco.index = copy.deepcopy(self.index)
+
         return new_coco
 
     def reindex(self):
@@ -300,7 +302,7 @@ class CocoDataset():
             list -- a list of tuples category number of images
         """
         return {
-            cat_id: len(imgs_list)
+            self.cats[cat_id]['name']: len(imgs_list)
             for cat_id, imgs_list in self.index.cat_to_imgs.items()
         }
 
@@ -310,7 +312,7 @@ class CocoDataset():
             list -- a list of tuples (category_name, number of annotations)
         """
         return {
-            cat_id: len(anns_list)
+            self.cats[cat_id]['name']: len(anns_list)
             for cat_id, anns_list in self.index.cat_to_anns.items()
         }
 
@@ -853,12 +855,15 @@ class CocoDataset():
 
         train_ds = self.copy()
         train_ds.remove_images(val_img_ids + test_img_ids)
+        train_ds.reindex()
 
         val_ds = self.copy()
         val_ds.remove_images(train_img_ids + test_img_ids)
+        train_ds.reindex()
 
         test_ds = self.copy()
         test_ds.remove_images(train_img_ids + val_img_ids)
+        train_ds.reindex()
 
         return train_ds, val_ds, test_ds
 
