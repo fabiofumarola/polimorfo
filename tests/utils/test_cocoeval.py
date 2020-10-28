@@ -27,4 +27,5 @@ def test_mean_average_precision_and_recall():
     class_idx_metrics = cocoeval.mean_average_precision_and_recall_per_class(df)
     class_idxs = df['true_class_id'].unique()
     class_idxs = class_idxs[class_idxs > 0]
+    print(class_idx_metrics)
     assert len(class_idx_metrics) == len(class_idxs)
