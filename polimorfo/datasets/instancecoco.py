@@ -67,7 +67,7 @@ class InstanceCoco(CocoDataset):
             # create the polygons
             mask = masks[..., i]
             polygons = maskutils.mask_to_polygon(mask)
-            area = float(maskutils.area(mask))
+            area = int(maskutils.area(mask))
             score = float(scores[i])
             annotation_ids.append(
                 self.add_annotation(img_id, cat_id, polygons, area, bbox, 0,
