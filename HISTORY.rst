@@ -107,3 +107,9 @@ History
 0.8.14 (2020-10-26)
 --------------------
 * fixed bug in json dump to serialize numpy types
+
+
+0.9.1 (2020-10-28)
+--------------------
+* fixed vairous bugs
+* add index for speedup lookup operations
