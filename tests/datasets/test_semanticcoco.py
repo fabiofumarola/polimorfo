@@ -33,3 +33,22 @@ def test_add_annotations_zero_mask():
     ann_idx = ds.add_annotations_from_scores(img_id, mask_logits)
 
     assert len(ann_idx) == 0
+
+
+def test_call_count_statistics():
+    ds = SemanticCocoDataset('fake.json')
+
+    img_id = ds.add_image(BASE_PATH / 'test_nodamage.jpg')
+    ds.add_category('cat1', 'thing')
+    ds.add_category('cat2', 'thing')
+
+    mask_logits = np.random.randn(3, 256, 256)
+    mask_logits[1:3] += 2
+
+    ann_idx = ds.add_annotations_from_scores(img_id, mask_logits)
+    # ds.reindex()
+
+    print(ds.cats_annotations_count())
+    print(ds.cats_images_count())
+
+    assert len(ann_idx) > 0
