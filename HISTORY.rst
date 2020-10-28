@@ -111,5 +111,10 @@ History
 
 0.9.1 (2020-10-28)
 --------------------
-* fixed vairous bugs
+* fixed various bugs
 * add index for speedup lookup operations
+
+0.9.2 (2020-10-28)
+---------------------
+
+* add new feature to compute mean average precision and recall per class and global
