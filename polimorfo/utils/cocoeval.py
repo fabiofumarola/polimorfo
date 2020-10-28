@@ -185,3 +185,13 @@ def mean_average_precision_and_recall_per_class(
             df_class, range_iou)
 
     return class_idx_metrics
+
+
+def precision_recall_per_image(
+    prediction_report: pd.DataFrame,
+    image_name: str,
+    range_iou: np.ndarray = np.arange(.5, 1., .05)
+) -> Tuple[float, float]:
+    df = prediction_report
+    df_image = df[df['img_path'] == image_name]
+    return mean_average_precision_and_recall(df_image, range_iou)

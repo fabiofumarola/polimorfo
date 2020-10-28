@@ -27,3 +27,12 @@ def test_mean_average_precision_and_recall_per_class():
     class_idxs = class_idxs[class_idxs > 0]
     print(class_idx_metrics)
     assert len(class_idx_metrics) == len(class_idxs)
+
+
+def test_precision_recall_per_image():
+    ds_path = BASE_PATH / 'hair_drier_toaster_bear.json'
+    df = cocoeval.generate_predictions(ds_path, ds_path)
+
+    map, mar = cocoeval.precision_recall_per_image(df, df['img_path'].loc[0])
+    assert map > 0
+    assert mar > 0
