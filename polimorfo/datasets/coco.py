@@ -840,7 +840,7 @@ class CocoDataset():
                             ax=ax,
                             colors=colors,
                             show_masks=show_masks,
-                            show_boxes=show_boxe,
+                            show_boxes=show_boxes,
                             min_score=min_score)
 
         return fig
