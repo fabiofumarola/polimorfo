@@ -723,21 +723,26 @@ class CocoDataset():
                    figsize=(18, 6),
                    colors=None,
                    show_boxes=False,
-                   show_masks=True) -> plt.Axes:
+                   show_masks=True,
+                   min_score=0.5) -> plt.Axes:
         """show an image with its annotations
 
         Args:
-            img_idx ([int]): the idx of the image to load (Optional: None)
+            img_idx (int, optional): the idx of the image to load (Optional: None)
                 in case the value is not specified take a random id
-            anns_idx ([List[int]], optional): [description]. Defaults to None.
+            anns_idx (List[int], optional): [description]. Defaults to None.
             ax ([type], optional): [description]. Defaults to None.
-            title ([type], optional): [description]. Defaults to None.
+            title (str, optional): [description]. Defaults to None.
             figsize (tuple, optional): [description]. Defaults to (18, 6).
+            colors ([type], optional): [description]. Defaults to None.
+            show_boxes (bool, optional): [description]. Defaults to False.
+            show_masks (bool, optional): [description]. Defaults to True.
+            min_score (float, optional): [description]. Defaults to 0.5.
 
         Returns:
-            [plt.Axes]: [description]
+            plt.Axes: [description]
         """
-        if not img_idx:
+        if img_idx is None:
             img_idx = np.random.randint(0, self.img_id)
 
         img = self.load_image(img_idx)
@@ -790,6 +795,7 @@ class CocoDataset():
                                       colors=colors,
                                       show_boxes=show_boxes,
                                       show_masks=show_masks,
+                                      min_score=min_score,
                                       box_type=visualizeutils.BoxType.xywh)
 
         return ax
@@ -799,7 +805,8 @@ class CocoDataset():
                     num_cols=4,
                     figsize=(32, 32),
                     show_masks=True,
-                    show_boxes=False) -> plt.Figure:
+                    show_boxes=False,
+                    min_score=0.5) -> plt.Figure:
         """show the images with their annotations
 
         Args:
@@ -807,7 +814,9 @@ class CocoDataset():
                 If None a random sample of 8 images is taken from the db
             num_cols (int, optional): [description]. Defaults to 4.
             figsize (tuple, optional): [description]. Defaults to (32, 32).
-
+            show_masks (bool, optional): [description]. Defaults to True.
+            show_boxes (bool, optional): [description]. Defaults to False.
+            min_score (float, optional): [description]. Defaults to 0.5.
         Returns:
             plt.Figure: [description]
         """
@@ -831,7 +840,8 @@ class CocoDataset():
                             ax=ax,
                             colors=colors,
                             show_masks=show_masks,
-                            show_boxes=show_boxes)
+                            show_boxes=show_boxe,
+                            min_score=min_score)
 
         return fig
 
