@@ -58,6 +58,7 @@ class CocoDataset():
         self.cat_id = 1
         self.img_id = 0
         self.ann_id = 0
+        self.index = None
 
         self.info = {
             "year": datetime.now().year,
@@ -185,6 +186,9 @@ class CocoDataset():
         Returns:
             List: a list of the annotations in coco format
         """
+        if not self.index:
+            self.reindex()
+
         anns_idx = self.index.img_to_anns.get(img_idx)
         if anns_idx is None:
             return []
@@ -301,6 +305,9 @@ class CocoDataset():
         Returns:
             list -- a list of tuples category number of images
         """
+        if not self.index:
+            self.reindex()
+
         return {
             self.cats[cat_id]['name']: len(imgs_list)
             for cat_id, imgs_list in self.index.cat_to_imgs.items()
@@ -311,6 +318,9 @@ class CocoDataset():
         Returns:
             list -- a list of tuples (category_name, number of annotations)
         """
+        if not self.index:
+            self.reindex()
+
         return {
             self.cats[cat_id]['name']: len(anns_list)
             for cat_id, anns_list in self.index.cat_to_anns.items()
