@@ -108,7 +108,6 @@ History
 --------------------
 * fixed bug in json dump to serialize numpy types
 
-
 0.9.1 (2020-10-28)
 --------------------
 * fixed various bugs
@@ -116,5 +115,8 @@ History
 
 0.9.2 (2020-10-28)
 ---------------------
-
 * add new feature to compute mean average precision and recall per class and global
+
+0.9.3 (2020-10-28)
+---------------------
+* add computation of mean average precision and mean average recall per image
