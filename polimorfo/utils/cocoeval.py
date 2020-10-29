@@ -127,9 +127,9 @@ def generate_predictions(gt_path: str,
 
 
 def mean_average_precision_and_recall(
-    prediction_report: pd.DataFrame,
-    range_iou: np.ndarray = np.arange(.5, 1., .05)
-) -> Tuple[float, float]:
+        prediction_report: pd.DataFrame,
+        range_iou: np.ndarray = np.arange(.5, 1., .05),
+        min_score: float = 0.0) -> Tuple[float, float]:
     """
     compute mean average precision and recall for a given range
 
@@ -137,12 +137,15 @@ def mean_average_precision_and_recall(
         prediction_report (pd.DataFrame): a dataframe generated using the method
             :func:`generate_predictions <polimorfo.utils.cocoeval.generate_predictions>`
         range_iou (np.ndarray, optional): a valid range of values. Defaults to np.arange(.5, 1., .05).
+        min_score: (float): the min score used to filter annotations. Defaults: 0.0
 
     Returns:
         Tuple[float, float]: mean average precision and mean average recall
     """
 
     df = prediction_report
+    # filter low score predictions
+    df = df[df['score'] >= min_score]
     precisions = []
     recalls = []
     for iou in range_iou:
@@ -165,9 +168,11 @@ def mean_average_precision_and_recall(
 
 
 def mean_average_precision_and_recall_per_class(
-    prediction_report: pd.DataFrame,
-    range_iou: np.ndarray = np.arange(.5, 1., .05)
-) -> Dict[int, Tuple[float, float]]:
+        prediction_report: pd.DataFrame,
+        range_iou: np.ndarray = np.arange(.5, 1., .05),
+        min_score: float = 0.0,
+        idx_class_dict: Dict[int,
+                             str] = None) -> Dict[int, Tuple[float, float]]:
     """
     generate mean average precision and recall for class idx
 
@@ -188,17 +193,22 @@ def mean_average_precision_and_recall_per_class(
             continue
         df_class = df[(df['true_class_id'] == class_idx) |
                       (df['pred_class_id'] == class_idx)]
-        class_idx_metrics[class_idx] = mean_average_precision_and_recall(
-            df_class, range_iou)
+
+        map_mar = mean_average_precision_and_recall(df_class, range_iou,
+                                                    min_score)
+        if idx_class_dict is not None and class_idx in idx_class_dict:
+            class_name = idx_class_dict[class_idx]
+            class_idx_metrics[class_name] = map_mar
+        else:
+            class_idx_metrics[class_idx] = map_mar
 
     return class_idx_metrics
 
 
-def precision_recall_per_image(
-    prediction_report: pd.DataFrame,
-    image_name: str,
-    range_iou: np.ndarray = np.arange(.5, 1., .05)
-) -> Tuple[float, float]:
+def precision_recall_per_image(prediction_report: pd.DataFrame,
+                               image_name: str,
+                               range_iou: np.ndarray = np.arange(.5, 1., .05),
+                               min_score: float = 0.0) -> Tuple[float, float]:
     df = prediction_report
     df_image = df[df['img_path'] == image_name]
-    return mean_average_precision_and_recall(df_image, range_iou)
+    return mean_average_precision_and_recall(df_image, range_iou, min_score)
