@@ -37,9 +37,7 @@ setup(
     description=
     "a dataset loader and converter for object detection segmentation and classification",
     entry_points={
-        'console_scripts': [
-            'polimorfo=polimorfo.cli:main',
-        ],
+        'console_scripts': ['polimorfo=polimorfo.cli:main',],
     },
     install_requires=requirements,
     license="Apache Software License 2.0",
@@ -52,6 +50,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/fabiofumarola/polimorfo',
-    version='version='version='0.9.13''',
+    version='0.9.13',
     zip_safe=False,
 )
