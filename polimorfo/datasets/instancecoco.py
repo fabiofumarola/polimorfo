@@ -69,7 +69,7 @@ class InstanceCoco(CocoDataset):
             # convert box to
             x0, y0, x1, y1 = boxes[i]
             w, h = x1 - x0, y1 - y0
-            area = w * h
+            area = int(w * h)
             if area == 0:
                 continue
 
