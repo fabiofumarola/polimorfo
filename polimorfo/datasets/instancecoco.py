@@ -17,9 +17,14 @@ class InstanceCoco(CocoDataset):
 
     """
 
-    def add_annotations(self, img_id: int, labels: np.ndarray,
-                        boxes: np.ndarray, masks: np.ndarray,
-                        scores: np.ndarray) -> List[int]:
+    def add_annotations(
+        self,
+        img_id: int,
+        labels: np.ndarray,
+        boxes: np.ndarray,
+        scores: np.ndarray,
+        masks: np.ndarray = None,
+    ) -> List[int]:
         """
         add the annotations from the given results
 
@@ -27,8 +32,8 @@ class InstanceCoco(CocoDataset):
             img_id (int): the idx of the image to add the annotations
             labels (np.ndarray): an array with the label predicted
             boxes (np.ndarray): an array of shape (n_labels, 4)
-            masks (np.ndarray): an array of shape (Height, Width, n_labels)
             scores (np.ndarray): an array with the scores of the predictions
+            masks (np.ndarray): an array of shape (Height, Width, n_labels) (Optional: None is your saving only boxes)
 
         Raises:
             ValueError: labels.shape should equal to 1, (n_labels,)
@@ -46,11 +51,12 @@ class InstanceCoco(CocoDataset):
         if len(boxes.shape) != 2:
             raise ValueError('boxes.shape should equal to 2 (n_labels, 4)')
 
-        masks = masks.squeeze()
+        if masks is not None:
+            masks = masks.squeeze()
 
-        if len(masks.shape) != 3:
-            raise ValueError(
-                'masks.shape should equal to 3, (Height, Width, n_labels)')
+            if len(masks.shape) != 3:
+                raise ValueError(
+                    'masks.shape should equal to 3, (Height, Width, n_labels)')
 
         if len(scores.shape) != 1:
             raise ValueError('scores.shape should equal to 1, (n_labels,)')
@@ -63,18 +69,17 @@ class InstanceCoco(CocoDataset):
             # convert box to
             x0, y0, x1, y1 = boxes[i]
             w, h = x1 - x0, y1 - y0
-            bbox = [float(x0), float(y0), float(w), float(h)]
-            # create the polygons
-            mask = masks[..., i]
-            polygons = maskutils.mask_to_polygon(mask)
-
-            if len(polygons) == 0:
-                continue
-
-            area = int(maskutils.area(mask))
-
+            area = w * h
             if area == 0:
                 continue
+
+            bbox = [float(x0), float(y0), float(w), float(h)]
+            # create the polygons
+            if masks is not None:
+                mask = masks[..., i]
+                polygons = maskutils.mask_to_polygon(mask)
+            else:
+                polygons = []
 
             score = float(scores[i])
             annotation_ids.append(

@@ -748,9 +748,7 @@ class CocoDataset():
         img = self.load_image(img_idx)
 
         if anns_idx is None:
-            anns = [
-                ann for ann in self.anns.values() if ann['image_id'] == img_idx
-            ]
+            anns = self.index.img_to_anns[img_idx]
         else:
             anns = [self.anns[i] for i in anns_idx]
 
@@ -764,8 +762,6 @@ class CocoDataset():
             if 'segmentation' in ann:
                 mask = maskutils.polygons_to_mask(ann['segmentation'],
                                                   img.height, img.width)
-                if mask is None:
-                    mask = np.zeros((img.width, img.height))
                 masks.append(mask)
             if 'score' in ann:
                 scores.append(float(ann['score']))
