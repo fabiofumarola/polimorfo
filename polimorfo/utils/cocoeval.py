@@ -55,7 +55,9 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
     return best_pred_ann_id, best_values
 
 
-def generate_predictions(gt_path: str, preds_path: str, images_path: str,
+def generate_predictions(gt_path: str,
+                         preds_path: str,
+                         images_path: str = None,
                          **kwargs) -> pd.DataFrame:
     """
     create a list that contains the comparison between the predictions
