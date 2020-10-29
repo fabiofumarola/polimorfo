@@ -38,7 +38,7 @@ class InstanceCoco(CocoDataset):
         Raises:
             ValueError: labels.shape should equal to 1, (n_labels,)
             ValueError: boxes.shape should equal to 2 (n_labels, 4)
-            ValueError: masks.shape should equal to 3, (Height, Width, n_labels)
+            ValueError: masks.shape should equal to 3, (n_labels, Height, Width, n_labels)
             ValueError: scores.shape should equal to 1, (n_labels,)
 
         Returns:
@@ -56,7 +56,7 @@ class InstanceCoco(CocoDataset):
 
             if len(masks.shape) != 3:
                 raise ValueError(
-                    'masks.shape should equal to 3, (Height, Width, n_labels)')
+                    'masks.shape should equal to 3, (n_labels, Height, Width)')
 
         if len(scores.shape) != 1:
             raise ValueError('scores.shape should equal to 1, (n_labels,)')
@@ -76,7 +76,7 @@ class InstanceCoco(CocoDataset):
             bbox = [float(x0), float(y0), float(w), float(h)]
             # create the polygons
             if masks is not None:
-                mask = masks[..., i]
+                mask = masks[i, ...]
                 polygons = maskutils.mask_to_polygon(mask)
             else:
                 polygons = []
