@@ -68,15 +68,17 @@ class SemanticCocoDataset(CocoDataset):
                 group_mask = (groups == group_idx).astype(np.uint8)
                 polygons = maskutils.mask_to_polygon(group_mask)
 
-                if len(polygons) == 0 or len(polygons[0]) < 8:
+                if len(polygons) == 0:
                     continue
+
                 bbox = maskutils.bbox(polygons, *masks.shape).tolist()
                 # an exception is generated when the mask has less than 3 points
                 area = int(maskutils.area(group_mask))
                 if area == 0:
                     continue
                 segment_probs_mask = group_mask * class_probs
-                score = float(np.mean(segment_probs_mask[segment_probs_mask > 0]))
+                score = float(
+                    np.mean(segment_probs_mask[segment_probs_mask > 0]))
                 annotation_ids.append(
                     self.add_annotation(img_id, cat_id, polygons, area, bbox, 0,
                                         score))
