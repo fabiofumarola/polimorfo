@@ -764,6 +764,8 @@ class CocoDataset():
             if 'segmentation' in ann:
                 mask = maskutils.polygons_to_mask(ann['segmentation'],
                                                   img.height, img.width)
+                if mask is None:
+                    mask = np.zeros((img.width, img.height))
                 masks.append(mask)
             if 'score' in ann:
                 scores.append(float(ann['score']))
@@ -840,7 +842,7 @@ class CocoDataset():
                             ax=ax,
                             colors=colors,
                             show_masks=show_masks,
-                            show_boxes=show_boxe,
+                            show_boxes=show_boxes,
                             min_score=min_score)
 
         return fig

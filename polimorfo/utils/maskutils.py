@@ -19,10 +19,20 @@ def mask_to_polygon(mask, min_score=0.5):
                                 offset=(-1, -1))
     polygons = polygons[0] if len(polygons) == 2 else polygons[1]
     polygons = [polygon.flatten().tolist() for polygon in polygons]
+    # add filter to remove invalid polygons
+    print(polygons)
+    polygons = [polygon for polygon in polygons if len(polygon) > 8]
+
     return polygons
 
 
 def polygons_to_mask(polygons, height, width):
+    if len(polygons) == 0:
+        return None
+
+    if len(polygons[0]) < 8:
+        return None
+
     rle = mask_util.frPyObjects(polygons, height, width)
     rle = mask_util.merge(rle)
     return mask_util.decode(rle)[:, :]

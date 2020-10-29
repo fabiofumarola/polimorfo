@@ -120,3 +120,7 @@ History
 0.9.3 (2020-10-28)
 ---------------------
 * add computation of mean average precision and mean average recall per image
+
+0.94 (2020-10-28)
+---------------------
+* fixed bug in score computation
