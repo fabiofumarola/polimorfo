@@ -1,3 +1,4 @@
+from pathlib import Path
 from polimorfo.datasets.coco import CocoDataset
 from typing import Dict, List, Tuple
 from tqdm import tqdm
@@ -54,7 +55,7 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
     return best_pred_ann_id, best_values
 
 
-def generate_predictions(gt_path: str, preds_path: str,
+def generate_predictions(gt_path: str, preds_path: str, images_path: str,
                          **kwargs) -> pd.DataFrame:
     """
     create a list that contains the comparison between the predictions
@@ -63,6 +64,7 @@ def generate_predictions(gt_path: str, preds_path: str,
     Args:
         gt_path (str): the path of the ground truth annotations
         preds_path (str): the path of the prediction annotations
+        images_path (str): tthe path were are saved the images
 
     Raises:
         Exception: returns an execption if the image idx of the files are not aligned
@@ -70,9 +72,12 @@ def generate_predictions(gt_path: str, preds_path: str,
     Returns:
         pd.DataFrame: [description]
     """
-    gt_ds = CocoDataset(gt_path)
+    if images_path is None:
+        images_path = Path(gt_path).parent / 'images'
+
+    gt_ds = CocoDataset(gt_path, images_path)
     gt_ds.reindex()
-    pred_ds = CocoDataset(preds_path)
+    pred_ds = CocoDataset(preds_path, images_path)
     pred_ds.reindex()
 
     header = [
