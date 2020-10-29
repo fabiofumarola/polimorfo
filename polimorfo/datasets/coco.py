@@ -189,7 +189,7 @@ class CocoDataset():
         if not self.index:
             self.reindex()
 
-        anns_idx = self.index.img_to_anns.get(img_idx)
+        anns_idx = self.index.imgidx_to_annidxs.get(img_idx)
         if anns_idx is None:
             return []
         return [self.anns[idx] for idx in anns_idx]
@@ -310,7 +310,7 @@ class CocoDataset():
 
         return {
             self.cats[cat_id]['name']: len(imgs_list)
-            for cat_id, imgs_list in self.index.cat_to_imgs.items()
+            for cat_id, imgs_list in self.index.catidx_to_imgidxs.items()
         }
 
     def cats_annotations_count(self):
@@ -323,7 +323,7 @@ class CocoDataset():
 
         return {
             self.cats[cat_id]['name']: len(anns_list)
-            for cat_id, anns_list in self.index.cat_to_anns.items()
+            for cat_id, anns_list in self.index.catidx_to_annidxs.items()
         }
 
     def keep_categories(self, ids: List[int], remove_images: bool = False):
@@ -748,9 +748,8 @@ class CocoDataset():
         img = self.load_image(img_idx)
 
         if anns_idx is None:
-            anns = self.index.img_to_anns[img_idx]
-        else:
-            anns = [self.anns[i] for i in anns_idx]
+            anns_idx = self.index.imgidx_to_annidxs[img_idx]
+        anns = [self.anns[i] for i in anns_idx]
 
         boxes = []
         labels = []
@@ -889,12 +888,12 @@ class CocoDataset():
 class Index(object):
 
     def __init__(self, coco: CocoDataset) -> None:
-        self.cat_to_imgs: DefaultDict[int, List[int]] = defaultdict(list)
-        self.img_to_anns: DefaultDict[int, List[int]] = defaultdict(list)
-        self.cat_to_anns: DefaultDict[int, List[int]] = defaultdict(list)
+        self.catidx_to_imgidxs: DefaultDict[int, List[int]] = defaultdict(list)
+        self.imgidx_to_annidxs: DefaultDict[int, List[int]] = defaultdict(list)
+        self.catidx_to_annidxs: DefaultDict[int, List[int]] = defaultdict(list)
 
         for idx, ann_meta in coco.anns.items():
-            self.cat_to_imgs[ann_meta['category_id']].append(
+            self.catidx_to_imgidxs[ann_meta['category_id']].append(
                 (ann_meta['image_id']))
-            self.img_to_anns[ann_meta['image_id']].append((idx))
-            self.cat_to_anns[ann_meta['category_id']].append(idx)
+            self.imgidx_to_annidxs[ann_meta['image_id']].append((idx))
+            self.catidx_to_annidxs[ann_meta['category_id']].append(idx)
