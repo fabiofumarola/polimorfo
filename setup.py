@@ -52,6 +52,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/fabiofumarola/polimorfo',
-    version='version='0.9.12'',
+    version='version='version='0.9.12''',
     zip_safe=False,
 )
