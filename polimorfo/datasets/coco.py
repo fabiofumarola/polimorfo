@@ -724,7 +724,8 @@ class CocoDataset():
                    colors=None,
                    show_boxes=False,
                    show_masks=True,
-                   min_score=0.5) -> plt.Axes:
+                   min_score=0.5,
+                   cats_idx: List[int] = None) -> plt.Axes:
         """show an image with its annotations
 
         Args:
@@ -738,6 +739,7 @@ class CocoDataset():
             show_boxes (bool, optional): [description]. Defaults to False.
             show_masks (bool, optional): [description]. Defaults to True.
             min_score (float, optional): [description]. Defaults to 0.5.
+            cats_idx (List, optional): the list of categories to show. Defaults to None to display all the categories
 
         Returns:
             plt.Axes: [description]
@@ -750,6 +752,9 @@ class CocoDataset():
         if anns_idx is None:
             anns_idx = self.index.imgidx_to_annidxs[img_idx]
         anns = [self.anns[i] for i in anns_idx]
+
+        if cats_idx is not None:
+            anns = [ann for ann in anns if ann['category_id'] in cats_idx]
 
         boxes = []
         labels = []
@@ -803,7 +808,8 @@ class CocoDataset():
                     figsize=(32, 32),
                     show_masks=True,
                     show_boxes=False,
-                    min_score=0.5) -> plt.Figure:
+                    min_score=0.5,
+                    cats_idx: List[int] = None) -> plt.Figure:
         """show the images with their annotations
 
         Args:
@@ -838,7 +844,8 @@ class CocoDataset():
                             colors=colors,
                             show_masks=show_masks,
                             show_boxes=show_boxes,
-                            min_score=min_score)
+                            min_score=min_score,
+                            cats_idx=cats_idx)
 
         return fig
 
