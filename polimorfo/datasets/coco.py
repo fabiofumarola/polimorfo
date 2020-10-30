@@ -3,7 +3,7 @@ import json
 from numpy.lib.utils import deprecate
 from tqdm import tqdm
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, Any, Tuple
+from typing import DefaultDict, Dict, List, Any, Tuple, Union
 import logging
 from PIL import Image
 import numpy as np
@@ -749,6 +749,9 @@ class CocoDataset():
 
         img = self.load_image(img_idx)
 
+        if title is None:
+            title = self.imgs[img_idx]['file_name']
+
         if anns_idx is None:
             anns_idx = self.index.imgidx_to_annidxs[img_idx]
         anns = [self.anns[i] for i in anns_idx]
@@ -803,7 +806,7 @@ class CocoDataset():
         return ax
 
     def show_images(self,
-                    img_idxs: List[int] = None,
+                    img_idxs: Union[List[int], int] = None,
                     num_cols=4,
                     figsize=(32, 32),
                     show_masks=True,
@@ -813,7 +816,7 @@ class CocoDataset():
         """show the images with their annotations
 
         Args:
-            img_idxs ([List[int]]): a list of image idxs to display (Optional: None)
+            img_idxs (Union[List[int], int]): a list of image idxs to display or the number of images (Optional: None)
                 If None a random sample of 8 images is taken from the db
             num_cols (int, optional): [description]. Defaults to 4.
             figsize (tuple, optional): [description]. Defaults to (32, 32).
@@ -825,6 +828,9 @@ class CocoDataset():
         """
         if not img_idxs:
             img_idxs = np.random.choice(list(self.imgs.keys()), 8,
+                                        False).tolist()
+        elif isinstance(img_idxs, int):
+            img_idxs = np.random.choice(list(self.imgs.keys()), img_idxs,
                                         False).tolist()
 
         num_rows = len(img_idxs) // num_cols
