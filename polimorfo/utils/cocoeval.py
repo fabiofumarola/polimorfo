@@ -31,8 +31,8 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
     """
     best_pred_ann_id = -1
     best_iou = 0
-    #
-    best_values = [img_path, gt_ann_id, -1, gt_class_id, 0, 0, 0, 0, 0]
+    # false negative as default
+    best_values = [img_path, gt_ann_id, -1, gt_class_id, 0, 0, 0, 0, 1]
     for pred_ann in pred_anns:
         pred_mask = maskutils.polygons_to_mask(pred_ann['segmentation'],
                                                gt_img_meta['height'],
@@ -53,6 +53,12 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
             best_pred_ann_id = pred_ann_id
             best_iou = iou
     return best_pred_ann_id, best_values
+
+
+REPORT_HEADER = [
+    'img_path', 'gt_ann_id', 'pred_ann_id', 'true_class_id', 'pred_class_id',
+    'intersection', 'union', 'IOU', 'score'
+]
 
 
 def generate_predictions(gt_path: str,
@@ -81,11 +87,6 @@ def generate_predictions(gt_path: str,
     gt_ds.reindex()
     pred_ds = CocoDataset(preds_path, images_path)
     pred_ds.reindex()
-
-    header = [
-        'img_path', 'gt_ann_id', 'pred_ann_id', 'true_class_id',
-        'pred_class_id', 'intersection', 'union', 'IOU', 'score'
-    ]
 
     results = []
 
@@ -118,12 +119,13 @@ def generate_predictions(gt_path: str,
 
         # add the false positive
         for pred_ann_id, pred_ann in pred_idx_dict.items():
+            #put a false positive with high score in order to not remove it from metrics
             results.append([
                 img_path, -1, pred_ann_id, 0, pred_ann['category_id'], 0, 0, 0,
-                0
+                1
             ])
 
-    return pd.DataFrame(results, columns=header)
+    return pd.DataFrame(results, columns=REPORT_HEADER)
 
 
 def mean_average_precision_and_recall(
