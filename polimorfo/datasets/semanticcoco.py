@@ -41,6 +41,10 @@ class SemanticCocoDataset(CocoDataset):
             List[int]: [the idx of the annotations added]
         """
 
+        if not isinstance(masks, np.ndarray):
+            raise ValueError(
+                f'the mask type should be a numpy array not a {type(masks)}')
+
         if np.count_nonzero(masks) == 0:
             return None
 
