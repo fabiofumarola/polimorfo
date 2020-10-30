@@ -5,6 +5,7 @@ from tqdm import tqdm
 import numpy as np
 from . import maskutils
 import pandas as pd
+from sklearn import metrics
 
 __all__ = [
     'generate_predictions', 'mean_average_precision_and_recall',
@@ -13,8 +14,8 @@ __all__ = [
 
 
 def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
-                 gt_mask: np.ndarray, img_path: str,
-                 gt_class_id: int) -> Tuple[int, List]:
+                 gt_mask: np.ndarray, img_path: str, gt_class_id: int,
+                 gt_area: int) -> Tuple[int, List]:
     """
     compute the best prediction given the ground truth annotation
 
@@ -25,6 +26,7 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
         gt_mask (np.ndarray): the mask for the ground truth
         img_path (str): the path of the image
         gt_class_id (int): the idx of the ground truth class
+        gt_area: the area of the gt annotation
 
     Returns:
         Tuple[int, List]: the id of the best prediction and the values to be saved
@@ -32,7 +34,9 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
     best_pred_ann_id = -1
     best_iou = 0
     # false negative as default
-    best_values = [img_path, gt_ann_id, -1, gt_class_id, 0, 0, 0, 0, 1]
+    best_values = [
+        img_path, gt_ann_id, -1, gt_class_id, 0, 0, 0, 0, 1, gt_area, 0
+    ]
     for pred_ann in pred_anns:
         pred_mask = maskutils.polygons_to_mask(pred_ann['segmentation'],
                                                gt_img_meta['height'],
@@ -48,7 +52,7 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
         if iou > best_iou:
             best_values = [
                 img_path, gt_ann_id, pred_ann_id, gt_class_id, pred_class_id,
-                intersection, union, iou, pred_score
+                intersection, union, iou, pred_score, gt_area, pred_ann['area']
             ]
             best_pred_ann_id = pred_ann_id
             best_iou = iou
@@ -57,7 +61,7 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
 
 REPORT_HEADER = [
     'img_path', 'gt_ann_id', 'pred_ann_id', 'true_class_id', 'pred_class_id',
-    'intersection', 'union', 'IOU', 'score'
+    'intersection', 'union', 'IOU', 'score', 'true_area', 'pred_area'
 ]
 
 
@@ -111,7 +115,8 @@ def generate_predictions(gt_path: str,
             gt_class_id = gt_ann['category_id']
 
             pred_ann_id, row = __best_match(pred_anns, gt_img_meta, gt_ann_id,
-                                            gt_mask, img_path, gt_class_id)
+                                            gt_mask, img_path, gt_class_id,
+                                            gt_ann['area'])
             results.append(row)
             if pred_ann_id in pred_idx_dict:
                 del pred_idx_dict[pred_ann_id]
@@ -122,7 +127,7 @@ def generate_predictions(gt_path: str,
             #put a false positive with high score in order to not remove it from metrics
             results.append([
                 img_path, -1, pred_ann_id, 0, pred_ann['category_id'], 0, 0, 0,
-                1
+                1, 0, pred_ann['area']
             ])
 
     return pd.DataFrame(results, columns=REPORT_HEADER)
@@ -214,3 +219,34 @@ def precision_recall_per_image(prediction_report: pd.DataFrame,
     df = prediction_report
     df_image = df[df['img_path'] == image_name]
     return mean_average_precision_and_recall(df_image, range_iou, min_score)
+
+
+def confusion_matrix(
+        prediction_report: pd.DataFrame,
+        min_iou,
+        min_score,
+        idx_class_dict: Dict[int, str] = None,
+        normalize=False) -> Tuple[np.ndarray, metrics.ConfusionMatrixDisplay]:
+    df = prediction_report[prediction_report['IOU'] >= min_iou]
+    df = df[df['score'] >= min_score]
+
+    class_idxs = sorted(
+        list(
+            set(df['true_class_id'].unique().tolist() +
+                df['pred_class_id'].unique().tolist())))
+
+    labels = []
+    if idx_class_dict is not None:
+        for idx in class_idxs:
+            if idx == 0:
+                labels.append('no_danno')
+            else:
+                labels.append(idx_class_dict[idx])
+    else:
+        labels = class_idxs
+
+    cm = metrics.confusion_matrix(df['true_class_id'], df['pred_class_id'])
+    if normalize:
+        cm = cm / cm.sum()
+    cm_display = metrics.ConfusionMatrixDisplay(cm, display_labels=labels)
+    return cm, cm_display
