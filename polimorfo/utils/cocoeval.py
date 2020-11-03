@@ -33,6 +33,7 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
     """
     best_pred_ann_id = -1
     best_iou = 0
+
     # false negative as default
     best_values = [
         img_path, gt_ann_id, -1, gt_class_id, 0, 0, 0, 0, 1, gt_area, 0
@@ -127,7 +128,7 @@ def generate_predictions(gt_path: str,
             #put a false positive with high score in order to not remove it from metrics
             results.append([
                 img_path, -1, pred_ann_id, 0, pred_ann['category_id'], 0, 0, 0,
-                1, 0, pred_ann['area']
+                pred_ann['score'], 0, pred_ann['area']
             ])
 
     return pd.DataFrame(results, columns=REPORT_HEADER)
