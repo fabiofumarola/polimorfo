@@ -123,7 +123,7 @@ class CocoDataset():
 
         return new_coco
 
-    def reindex(self):
+    def reindex(self, by_image_name=True):
         """reindex images and annotations to be zero based and categories one based
         """
         old_new_catidx = dict()
@@ -138,7 +138,13 @@ class CocoDataset():
 
         old_new_imgidx = dict()
         new_imgs = dict()
-        for new_idx, (old_idx, img_meta) in tqdm(enumerate(self.imgs.items()),
+        if by_image_name:
+            sorted_imgs_items = sorted(self.imgs.items(),
+                                       key=lambda x: x[1]['file_name'])
+        else:
+            sorted_imgs_items = self.imgs.items()
+
+        for new_idx, (old_idx, img_meta) in tqdm(enumerate(sorted_imgs_items),
                                                  'reindex images'):
             old_new_imgidx[old_idx] = new_idx
             img_meta = img_meta.copy()
@@ -309,7 +315,7 @@ class CocoDataset():
             self.reindex()
 
         return {
-            self.cats[cat_id]['name']: len(imgs_list)
+            self.cats[cat_id]['name']: len(set(imgs_list))
             for cat_id, imgs_list in self.index.catidx_to_imgidxs.items()
         }
 
@@ -322,7 +328,7 @@ class CocoDataset():
             self.reindex()
 
         return {
-            self.cats[cat_id]['name']: len(anns_list)
+            self.cats[cat_id]['name']: len(set(anns_list))
             for cat_id, anns_list in self.index.catidx_to_annidxs.items()
         }
 

@@ -28,7 +28,7 @@ def test_categories_images_count(coco_test):
     images_count = coco_test.cats_images_count()
     assert len(images_count) == 3
     print(images_count)
-    assert images_count == {'toaster': 225, 'hair drier': 198, 'bear': 1294}
+    assert images_count == {'toaster': 217, 'hair drier': 189, 'bear': 960}
 
 
 def test_categories_annotations_count(coco_test):
@@ -141,4 +141,4 @@ def test_copy(coco_test: CocoDataset):
 def test_update_images_path(coco_test: CocoDataset):
     coco_test.update_images_path(lambda x: Path(x).name)
     coco_test.reindex()
-    assert coco_test.imgs[1]['file_name'] == '000000410627.jpg'
+    assert coco_test.imgs[1]['file_name'] == '000000001442.jpg'
