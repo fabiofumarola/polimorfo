@@ -41,35 +41,51 @@ class SemanticCocoDataset(CocoDataset):
             List[int]: [the idx of the annotations added]
         """
 
+        if not isinstance(masks, np.ndarray):
+            raise ValueError(
+                f'the mask type should be a numpy array not a {type(masks)}')
+
+        if np.count_nonzero(masks) == 0:
+            return None
+
         if len(masks.shape) != 2:
             raise ValueError('masks.shape should equal to 2')
 
         if len(probs.shape) != 3:
             raise ValueError('masks.shape should equal to 3')
 
+        annotation_ids = []
         # for each class
         for i, class_idx in enumerate(
                 np.unique(masks)[start_index:], start_index):
             class_mask = (masks == class_idx).astype(np.uint8)
             class_probs = probs[i]
-            cat_id = class_idx
+            cat_id = int(class_idx)
 
             if cat_id not in self.cats:
                 raise ValueError(f'cats {cat_id} not in dataset categories')
 
             groups, n_groups = scipy.ndimage.label(class_mask)
-            annotation_ids = []
+
             # get the groups starting from label 1
             for group_idx in range(1, n_groups + 1):
                 group_mask = (groups == group_idx).astype(np.uint8)
                 polygons = maskutils.mask_to_polygon(group_mask)
-                bbox = maskutils.bbox(polygons, *masks.shape)
-                area = maskutils.area(group_mask)
-                score = np.mean(class_mask * class_probs)
+                if len(polygons) == 0:
+                    continue
+
+                bbox = maskutils.bbox(polygons, *masks.shape).tolist()
+                # an exception is generated when the mask has less than 3 points
+                area = int(maskutils.area(group_mask))
+                if area == 0:
+                    continue
+                segment_probs_mask = group_mask * class_probs
+                score = float(
+                    np.mean(segment_probs_mask[segment_probs_mask > 0]))
                 annotation_ids.append(
                     self.add_annotation(img_id, cat_id, polygons, area, bbox, 0,
                                         score))
-            return annotation_ids
+        return annotation_ids
 
     def add_annotations_from_scores(self,
                                     img_id: int,
@@ -86,6 +102,6 @@ class SemanticCocoDataset(CocoDataset):
         Returns:
             List[int]: [the idx of the annotations added]]
         """
-        masks = np.argmax(mask_logits, axis=1)
+        masks = np.argmax(mask_logits, axis=0)
         probs = sigmoid(mask_logits)
-        return self.add_semantic_annotation(img_id, masks, probs, start_index)
+        return self.add_annotations(img_id, masks, probs, start_index)

@@ -87,3 +87,40 @@ History
 ------------------
 * added method to crop images
 * added method to move annotations with respect a bounding box
+
+0.8.7 (2020-10-24)
+------------------
+* support fully creation o a new dataset
+
+0.8.8-11 (2020-10-26)
+---------------------
+* fixed vairous bugs
+
+0.8.12 (2020-10-26)
+--------------------
+* fixed bug when the size of the segments is equal to 4
+
+0.8.13 (2020-10-26)
+--------------------
+* fixed bug in json dump to serialize numpy array
+
+0.8.14 (2020-10-26)
+--------------------
+* fixed bug in json dump to serialize numpy types
+
+0.9.1 (2020-10-28)
+--------------------
+* fixed various bugs
+* add index for speedup lookup operations
+
+0.9.2 (2020-10-28)
+---------------------
+* add new feature to compute mean average precision and recall per class and global
+
+0.9.3 (2020-10-28)
+---------------------
+* add computation of mean average precision and mean average recall per image
+
+0.94 (2020-10-28)
+---------------------
+* fixed bug in score computation

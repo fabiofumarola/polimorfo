@@ -309,7 +309,7 @@ def draw_segmentation(
         padded_mask = np.zeros((mask_cat.shape[0] + 2, mask_cat.shape[1] + 2),
                                dtype=np.uint8)
         padded_mask[1:-1, 1:-1] = mask_cat
-        contours = find_contours(padded_mask, 0.5)
+        contours = measure.find_contours(padded_mask, 0.5)
         for verts in contours:
             verts = np.fliplr(verts) - 1
             p = Polygon(
