@@ -4,6 +4,9 @@ from pathlib import Path
 import shutil
 from polimorfo.datasets import CocoDataset
 import os
+import numpy as np
+from PIL import Image
+from tqdm import tqdm
 
 BASE_PATH = Path(__file__).parent.parent / 'data'
 
@@ -55,6 +58,19 @@ def test_dump_segmentation(coco_test):
     out_path = BASE_PATH / 'segments'
     coco_test.dump(out_path, CocoDataset.ExportFormat.segmentation)
     assert len(list(out_path.glob('*.png'))) > 0
+    shutil.rmtree(out_path.as_posix())
+
+
+def test_save_segmentation_masks(coco_test):
+    out_path = BASE_PATH / 'segments'
+    coco_test.save_segmentation_masks(out_path, [23], {23: 24})
+    assert len(list(out_path.glob('*.png'))) > 0
+    distinct_values = set()
+    for png_path in tqdm(list(out_path.glob('*.png'))):
+        img = np.array(Image.open(png_path))
+        distinct_values = distinct_values.union(set(np.unique(img)))
+
+    assert distinct_values == {0, 24}
     shutil.rmtree(out_path.as_posix())
 
 

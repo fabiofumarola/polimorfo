@@ -13,6 +13,7 @@ from ..utils import maskutils, visualizeutils
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import copy
+from deprecated import deprecated
 
 from enum import Enum
 
@@ -200,7 +201,7 @@ class CocoDataset():
             return []
         return [self.anns[idx] for idx in anns_idx]
 
-    def compute_area(self):
+    def compute_area(self) -> None:
         """compute the area of the annotations
         """
         for ann in tqdm(self.anns.values(), desc='process images'):
@@ -213,7 +214,7 @@ class CocoDataset():
         """
         return len(self.imgs)
 
-    def merge_categories(self, cat_to_merge: List[str], new_cat: str):
+    def merge_categories(self, cat_to_merge: List[str], new_cat: str) -> None:
         """ Merge two or more categories labels to a new single category.
             Remove from __content the category to be merged and update
             annotations cat_ids and reindex data with update content.
@@ -228,7 +229,7 @@ class CocoDataset():
         ]
         self.merge_category_ids(catidx_to_merge, new_cat)
 
-    def merge_category_ids(self, cat_to_merge: List[int], new_cat: str):
+    def merge_category_ids(self, cat_to_merge: List[int], new_cat: str) -> None:
         """ Merge two or more categories labels to a new single category.
             Remove from __content the category to be merged and update
             annotations cat_ids and reindex data with update content.
@@ -306,7 +307,12 @@ class CocoDataset():
 
         print('removed %d images' % (len(to_remove_idx)))
 
+    @deprecated(version='0.9.21',
+                reason='you should use count_images_per_category')
     def cats_images_count(self):
+        return self.count_images_per_category()
+
+    def count_images_per_category(self):
         """get the number of images per category
         Returns:
             list -- a list of tuples category number of images
@@ -319,7 +325,12 @@ class CocoDataset():
             for cat_id, imgs_list in self.index.catidx_to_imgidxs.items()
         }
 
+    @deprecated(version='0.9.21',
+                reason='you should use count_annotations_per_category')
     def cats_annotations_count(self):
+        return self.count_annotations_per_category()
+
+    def count_annotations_per_category(self):
         """the number of annotations per category
         Returns:
             list -- a list of tuples (category_name, number of annotations)
@@ -375,9 +386,8 @@ class CocoDataset():
         }
 
         catnames_to_remove = {
-            cat_name
-            for cat_name, count in self.cats_annotations_count().items()
-            if count == 0
+            cat_name for cat_name, count in
+            self.count_annotations_per_category().items() if count == 0
         }
 
         self.cats = {
@@ -441,7 +451,7 @@ class CocoDataset():
                 json.dump(self.dumps(), fp)
         elif exp_format.value is self.ExportFormat.segmentation.value:
             # create a segmentation folder
-            if path:
+            if path is not None:
                 segments_path = path
             else:
                 segments_path = self.__image_folder.parent / 'segments'
@@ -450,7 +460,7 @@ class CocoDataset():
             # save a png of the masks
             for img_idx, img_meta in tqdm(
                     self.imgs.items(),
-                    f'savig images in {segments_path.as_posix()}'):
+                    f'savig masks in {segments_path.as_posix()}'):
                 name = '.'.join(
                     Path(img_meta['file_name']).name.split('.')[:-1])
                 segm_path = segments_path / (name + '.png')
@@ -459,12 +469,41 @@ class CocoDataset():
         else:
             raise ValueError('export format not valid')
 
-    def get_segmentation_mask(self, img_idx: int, cats_idx: List[int] = None):
+    def save_segmentation_masks(self,
+                                path: Union[str, Path] = None,
+                                cats_idx: List[int] = None,
+                                remapping_dict: Dict[int, int] = None) -> None:
+        """save the segmentation mask for the given dataset
+
+        Args:
+            path (Union[str, Path], optional): the path to save the masks. Defaults to None.
+            cats_idx (List[int], optional): [an optional filter over the classes]. Defaults to None.
+            remapping_dict (Dict[int, int], optional): a remapping dictionary for the index to save. Defaults to None.
+        """
+        if path is None:
+            path = self.__image_folder.parent / 'segments'
+        else:
+            path = Path(path)
+        path.mkdir(exist_ok=True, parents=True)
+
+        for img_idx, img_meta in tqdm(self.imgs.items(),
+                                      f'saving masks in {path.as_posix()}'):
+            name = '.'.join(Path(img_meta['file_name']).name.split('.')[:-1])
+            segm_path = path / (name + '.png')
+            segm_img = self.get_segmentation_mask(img_idx, cats_idx,
+                                                  remapping_dict)
+            segm_img.save(segm_path)
+
+    def get_segmentation_mask(self,
+                              img_idx: int,
+                              cats_idx: List[int] = None,
+                              remapping_dict: Dict[int, int] = None):
         """generate a mask for the given image idx
 
         Args:
             img_idx (int): [the id of the image]
             cats_idx (List[int], optional): [an optional filter over the classes]. Defaults to None.
+            remapping_dict (Dict[int, int], optional): [description]. Defaults to None.
 
         Returns:
             [type]: [description]
@@ -502,7 +541,10 @@ class CocoDataset():
                 for cat_id, mask in order_list:
                     if cat_id is already_written:
                         continue
-                    target[mask == 1] = cat_id
+                    if remapping_dict is not None and cat_id in remapping_dict:
+                        target[mask == 1] = remapping_dict[cat_id]
+                    else:
+                        target[mask == 1] = cat_id
                     already_written.append(cat_id)
 
         else:
