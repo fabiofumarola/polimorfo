@@ -4,6 +4,9 @@ from pathlib import Path
 import shutil
 from polimorfo.datasets import CocoDataset
 import os
+import numpy as np
+from PIL import Image
+from tqdm import tqdm
 
 BASE_PATH = Path(__file__).parent.parent / 'data'
 
@@ -28,7 +31,7 @@ def test_categories_images_count(coco_test):
     images_count = coco_test.cats_images_count()
     assert len(images_count) == 3
     print(images_count)
-    assert images_count == {'toaster': 225, 'hair drier': 198, 'bear': 1294}
+    assert images_count == {'toaster': 217, 'hair drier': 189, 'bear': 960}
 
 
 def test_categories_annotations_count(coco_test):
@@ -55,6 +58,19 @@ def test_dump_segmentation(coco_test):
     out_path = BASE_PATH / 'segments'
     coco_test.dump(out_path, CocoDataset.ExportFormat.segmentation)
     assert len(list(out_path.glob('*.png'))) > 0
+    shutil.rmtree(out_path.as_posix())
+
+
+def test_save_segmentation_masks(coco_test):
+    out_path = BASE_PATH / 'segments'
+    coco_test.save_segmentation_masks(out_path, [23], {23: 24})
+    assert len(list(out_path.glob('*.png'))) > 0
+    distinct_values = set()
+    for png_path in tqdm(list(out_path.glob('*.png'))):
+        img = np.array(Image.open(png_path))
+        distinct_values = distinct_values.union(set(np.unique(img)))
+
+    assert distinct_values == {0, 24}
     shutil.rmtree(out_path.as_posix())
 
 
@@ -141,4 +157,4 @@ def test_copy(coco_test: CocoDataset):
 def test_update_images_path(coco_test: CocoDataset):
     coco_test.update_images_path(lambda x: Path(x).name)
     coco_test.reindex()
-    assert coco_test.imgs[1]['file_name'] == '000000410627.jpg'
+    assert coco_test.imgs[1]['file_name'] == '000000001442.jpg'
