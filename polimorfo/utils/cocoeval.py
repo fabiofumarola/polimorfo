@@ -119,8 +119,9 @@ def generate_predictions_from_ds(gt_ds, pred_ds) -> pd.DataFrame:
         for pred_ann_id, pred_ann in pred_idx_dict.items():
             #put a false positive with high score in order to not remove it from metrics
             results.append([
-                img_path, -1, pred_ann_id, 0, pred_ann['category_id'], 0, 0, 0,
-                pred_ann['score'], 0, pred_ann['area'], 'false_positive'
+                img_path, -1, pred_ann_id, -1, pred_ann['category_id'], 0, 0, 0,
+                pred_ann['score'], sys.float_info.max, pred_ann['area'],
+                'false_positive'
             ])
 
     return pd.DataFrame(results, columns=REPORT_HEADER)
