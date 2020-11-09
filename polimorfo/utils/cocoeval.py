@@ -6,6 +6,7 @@ import numpy as np
 from . import maskutils
 import pandas as pd
 from sklearn import metrics
+import sys
 
 __all__ = [
     'generate_predictions', 'mean_average_precision_and_recall',
@@ -14,7 +15,8 @@ __all__ = [
 
 REPORT_HEADER = [
     'img_path', 'gt_ann_id', 'pred_ann_id', 'true_class_id', 'pred_class_id',
-    'intersection', 'union', 'IOU', 'score', 'true_area', 'pred_area'
+    'intersection', 'union', 'IOU', 'score', 'true_area', 'pred_area',
+    'class_value'
 ]
 
 
@@ -41,7 +43,8 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
 
     # false negative as default
     best_values = [
-        img_path, gt_ann_id, -1, gt_class_id, 0, 0, 0, 0, 1, gt_area, 0
+        img_path, gt_ann_id, -1, gt_class_id, 0, 0, 0, 0, 1, gt_area,
+        sys.float_info.max, 'false_negative'
     ]
     for pred_ann in pred_anns:
         pred_mask = maskutils.polygons_to_mask(pred_ann['segmentation'],
@@ -56,9 +59,15 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
         iou = intersection / union
 
         if iou > best_iou:
+            if pred_class_id == gt_class_id:
+                value = 'true_positive'
+            else:
+                value = 'false_positive'
+
             best_values = [
                 img_path, gt_ann_id, pred_ann_id, gt_class_id, pred_class_id,
-                intersection, union, iou, pred_score, gt_area, pred_ann['area']
+                intersection, union, iou, pred_score, gt_area, pred_ann['area'],
+                value
             ]
             best_pred_ann_id = pred_ann_id
             best_iou = iou
@@ -85,7 +94,10 @@ def generate_predictions_from_ds(gt_ds, pred_ds) -> pd.DataFrame:
         pred_idx_dict = {ann['id']: ann for ann in pred_anns}
 
         if (len(gt_anns) == 0) and (len(pred_anns) == 0):
-            results.append([img_path, -1, -1, 0, -1, 0, 0, 0, 1, 0, 0])
+            results.append([
+                img_path, -1, -1, -1, -1, 0, 0, 0, 1, sys.float_info.max,
+                sys.float_info.max, 'true_negative'
+            ])
 
         # iterate of the gr annotations
         for gt_ann in gt_anns:
@@ -108,7 +120,7 @@ def generate_predictions_from_ds(gt_ds, pred_ds) -> pd.DataFrame:
             #put a false positive with high score in order to not remove it from metrics
             results.append([
                 img_path, -1, pred_ann_id, 0, pred_ann['category_id'], 0, 0, 0,
-                pred_ann['score'], 0, pred_ann['area']
+                pred_ann['score'], 0, pred_ann['area'], 'false_positive'
             ])
 
     return pd.DataFrame(results, columns=REPORT_HEADER)
