@@ -12,6 +12,11 @@ __all__ = [
     'mean_average_precision_and_recall_per_class'
 ]
 
+REPORT_HEADER = [
+    'img_path', 'gt_ann_id', 'pred_ann_id', 'true_class_id', 'pred_class_id',
+    'intersection', 'union', 'IOU', 'score', 'true_area', 'pred_area'
+]
+
 
 def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
                  gt_mask: np.ndarray, img_path: str, gt_class_id: int,
@@ -60,12 +65,6 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
     return best_pred_ann_id, best_values
 
 
-REPORT_HEADER = [
-    'img_path', 'gt_ann_id', 'pred_ann_id', 'true_class_id', 'pred_class_id',
-    'intersection', 'union', 'IOU', 'score', 'true_area', 'pred_area'
-]
-
-
 def generate_predictions_from_ds(gt_ds, pred_ds) -> pd.DataFrame:
     gt_ds.reindex()
     pred_ds.reindex()
@@ -84,6 +83,10 @@ def generate_predictions_from_ds(gt_ds, pred_ds) -> pd.DataFrame:
         pred_anns = pred_ds.get_annotations(img_idx)
         # create a set with all the prediction that will be used to find FP
         pred_idx_dict = {ann['id']: ann for ann in pred_anns}
+
+        if (len(gt_anns) == 0) and (len(pred_anns) == 0):
+            results.append([img_path, -1, -1, 0, -1, 0, 0, 0, 1, 0, 0])
+
         # iterate of the gr annotations
         for gt_ann in gt_anns:
             gt_mask = maskutils.polygons_to_mask(gt_ann['segmentation'],
