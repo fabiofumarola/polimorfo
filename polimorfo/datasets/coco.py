@@ -109,6 +109,10 @@ class CocoDataset():
 
             self.index = Index(self)
 
+    @property
+    def images_path(self):
+        return self.__image_folder
+
     def copy(self):
         new_coco = CocoDataset('fake.json',
                                image_path=self.__image_folder.as_posix())

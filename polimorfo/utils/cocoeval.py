@@ -66,31 +66,8 @@ REPORT_HEADER = [
 ]
 
 
-def generate_predictions(gt_path: str,
-                         preds_path: str,
-                         images_path: str = None,
-                         **kwargs) -> pd.DataFrame:
-    """
-    create a list that contains the comparison between the predictions
-        and the ground truth to be used to compute all the metrics
-
-    Args:
-        gt_path (str): the path of the ground truth annotations
-        preds_path (str): the path of the prediction annotations
-        images_path (str): tthe path were are saved the images
-
-    Raises:
-        Exception: returns an execption if the image idx of the files are not aligned
-
-    Returns:
-        pd.DataFrame: [description]
-    """
-    if images_path is None:
-        images_path = Path(gt_path).parent / 'images'
-
-    gt_ds = CocoDataset(gt_path, images_path)
+def generate_predictions_from_ds(gt_ds, pred_ds) -> pd.DataFrame:
     gt_ds.reindex()
-    pred_ds = CocoDataset(preds_path, images_path)
     pred_ds.reindex()
 
     results = []
@@ -132,6 +109,35 @@ def generate_predictions(gt_path: str,
             ])
 
     return pd.DataFrame(results, columns=REPORT_HEADER)
+
+
+def generate_predictions(gt_path: str,
+                         preds_path: str,
+                         images_path: str = None,
+                         **kwargs) -> pd.DataFrame:
+    """
+    create a list that contains the comparison between the predictions
+        and the ground truth to be used to compute all the metrics
+
+    Args:
+        gt_path (str): the path of the ground truth annotations
+        preds_path (str): the path of the prediction annotations
+        images_path (str): the path were are saved the images
+
+    Raises:
+        Exception: returns an execption if the image idx of the files are not aligned
+
+    Returns:
+        pd.DataFrame: [description]
+    """
+    if images_path is None:
+        images_path = Path(gt_path).parent / 'images'
+
+    gt_ds = CocoDataset(gt_path, images_path)
+    gt_ds.reindex()
+    pred_ds = CocoDataset(preds_path, images_path)
+    pred_ds.reindex()
+    return generate_predictions_from_ds(gt_ds, pred_ds)
 
 
 def mean_average_precision_and_recall(
