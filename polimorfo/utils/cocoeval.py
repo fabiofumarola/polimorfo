@@ -56,7 +56,7 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
 
         intersection = (pred_mask * gt_mask).sum()
         union = np.count_nonzero(pred_mask + gt_mask)
-        iou = intersection / union
+        iou = intersection / (union + .00001)
 
         if iou > best_iou:
             if pred_class_id == gt_class_id:
