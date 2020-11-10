@@ -98,6 +98,7 @@ def draw_instances(img: np.ndarray,
                    show_boxes: bool = False,
                    show_masks: bool = True,
                    min_score: float = 0.5,
+                   min_area: int = 0,
                    colors: List = None,
                    ax: plt.Axes = None,
                    box_type: BoxType = BoxType.xyxy,
@@ -153,6 +154,7 @@ def draw_instances(img: np.ndarray,
         score = scores[idx]
         if score < min_score:
             continue
+
         if show_masks:
             mask = np.squeeze(masks[idx, ...])
         color = colors[label_id]
@@ -163,6 +165,10 @@ def draw_instances(img: np.ndarray,
             x, y, w, h = x0, y0, x1 - x0, y1 - y0
         else:
             x, y, w, h = box
+
+        area = w * h
+        if area < min_area:
+            continue
 
         if show_boxes:
             p = Rectangle((x, y),

@@ -788,6 +788,7 @@ class CocoDataset():
                    show_boxes=False,
                    show_masks=True,
                    min_score=0.5,
+                   min_area: int = 0,
                    cats_idx: List[int] = None) -> plt.Axes:
         """show an image with its annotations
 
@@ -872,6 +873,7 @@ class CocoDataset():
                                       show_boxes=show_boxes,
                                       show_masks=show_masks,
                                       min_score=min_score,
+                                      min_area=min_area,
                                       box_type=visualizeutils.BoxType.xywh)
 
         return ax
@@ -882,7 +884,8 @@ class CocoDataset():
                     figsize=(32, 32),
                     show_masks=True,
                     show_boxes=False,
-                    min_score=0.5,
+                    min_score: float = 0.5,
+                    min_area: int = 0,
                     cats_idx: List[int] = None) -> plt.Figure:
         """show the images with their annotations
 
@@ -894,6 +897,7 @@ class CocoDataset():
             show_masks (bool, optional): [description]. Defaults to True.
             show_boxes (bool, optional): [description]. Defaults to False.
             min_score (float, optional): [description]. Defaults to 0.5.
+            min_area (int, optional): the min area of the annotations to display, Default to 0
         Returns:
             plt.Figure: [description]
         """
@@ -922,6 +926,7 @@ class CocoDataset():
                             show_masks=show_masks,
                             show_boxes=show_boxes,
                             min_score=min_score,
+                            min_area=min_area,
                             cats_idx=cats_idx)
 
         return fig
