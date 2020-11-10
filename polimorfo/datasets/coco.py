@@ -3,7 +3,7 @@ import json
 from numpy.lib.utils import deprecate
 from tqdm import tqdm
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, Any, Tuple, Union
+from typing import DefaultDict, Dict, List, Tuple, Union, Set
 import logging
 from PIL import Image
 import numpy as np
@@ -188,11 +188,14 @@ class CocoDataset():
         for img_meta in tqdm(self.imgs.values()):
             img_meta['file_name'] = func(img_meta['file_name'])
 
-    def get_annotations(self, img_idx: int) -> List:
+    def get_annotations(self,
+                        img_idx: int,
+                        category_idxs: List[int] = None) -> List:
         """returns the annotations of the given image
 
         Args:
             img_idx (int): the image idx
+            category_idxs (List[int]): the list of the category to filter the returned annotations
 
         Returns:
             List: a list of the annotations in coco format
@@ -200,10 +203,17 @@ class CocoDataset():
         if not self.index:
             self.reindex()
 
+        if category_idxs is None:
+            category_idxs = list(self.cats.keys())
+
         anns_idx = self.index.imgidx_to_annidxs.get(img_idx)
-        if anns_idx is None:
-            return []
-        return [self.anns[idx] for idx in anns_idx]
+        annotations = []
+        for idx in anns_idx:
+            ann = self.anns[idx]
+            if ann['category_id'] in category_idxs:
+                annotations.append(ann)
+
+        return annotations
 
     def compute_area(self) -> None:
         """compute the area of the annotations
@@ -953,12 +963,12 @@ class CocoDataset():
 class Index(object):
 
     def __init__(self, coco: CocoDataset) -> None:
-        self.catidx_to_imgidxs: DefaultDict[int, List[int]] = defaultdict(list)
-        self.imgidx_to_annidxs: DefaultDict[int, List[int]] = defaultdict(list)
-        self.catidx_to_annidxs: DefaultDict[int, List[int]] = defaultdict(list)
+        self.catidx_to_imgidxs: DefaultDict[int, Set[int]] = defaultdict(set)
+        self.imgidx_to_annidxs: DefaultDict[int, Set[int]] = defaultdict(set)
+        self.catidx_to_annidxs: DefaultDict[int, Set[int]] = defaultdict(set)
 
         for idx, ann_meta in coco.anns.items():
-            self.catidx_to_imgidxs[ann_meta['category_id']].append(
+            self.catidx_to_imgidxs[ann_meta['category_id']].add(
                 (ann_meta['image_id']))
-            self.imgidx_to_annidxs[ann_meta['image_id']].append((idx))
-            self.catidx_to_annidxs[ann_meta['category_id']].append(idx)
+            self.imgidx_to_annidxs[ann_meta['image_id']].add((idx))
+            self.catidx_to_annidxs[ann_meta['category_id']].add(idx)

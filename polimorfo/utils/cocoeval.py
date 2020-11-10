@@ -56,7 +56,10 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
 
         intersection = (pred_mask * gt_mask).sum()
         union = np.count_nonzero(pred_mask + gt_mask)
-        iou = intersection / (union + .00001)
+        if intersection == 0 and union == 0:
+            iou = 0
+        else:
+            iou = intersection / union
 
         if iou > best_iou:
             if pred_class_id == gt_class_id:
@@ -74,14 +77,19 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
     return best_pred_ann_id, best_values
 
 
-def generate_predictions_from_ds(gt_ds, pred_ds) -> pd.DataFrame:
+def generate_predictions_from_ds(
+        gt_ds: CocoDataset,
+        pred_ds: CocoDataset,
+        category_idxs: List[int] = None) -> pd.DataFrame:
+
     gt_ds.reindex()
     pred_ds.reindex()
 
     results = []
 
     for img_idx, gt_img_meta in tqdm(gt_ds.imgs.items()):
-        gt_anns = gt_ds.get_annotations(img_idx)
+
+        gt_anns = gt_ds.get_annotations(img_idx, category_idxs)
         pred_img_meta = pred_ds.imgs[img_idx]
 
         if gt_img_meta['file_name'] != pred_img_meta['file_name']:
@@ -89,7 +97,7 @@ def generate_predictions_from_ds(gt_ds, pred_ds) -> pd.DataFrame:
 
         img_path = gt_img_meta['file_name']
 
-        pred_anns = pred_ds.get_annotations(img_idx)
+        pred_anns = pred_ds.get_annotations(img_idx, category_idxs)
         # create a set with all the prediction that will be used to find FP
         pred_idx_dict = {ann['id']: ann for ann in pred_anns}
 
@@ -130,6 +138,7 @@ def generate_predictions_from_ds(gt_ds, pred_ds) -> pd.DataFrame:
 def generate_predictions(gt_path: str,
                          preds_path: str,
                          images_path: str = None,
+                         category_idxs: List[int] = None,
                          **kwargs) -> pd.DataFrame:
     """
     create a list that contains the comparison between the predictions
@@ -150,10 +159,8 @@ def generate_predictions(gt_path: str,
         images_path = Path(gt_path).parent / 'images'
 
     gt_ds = CocoDataset(gt_path, images_path)
-    gt_ds.reindex()
     pred_ds = CocoDataset(preds_path, images_path)
-    pred_ds.reindex()
-    return generate_predictions_from_ds(gt_ds, pred_ds)
+    return generate_predictions_from_ds(gt_ds, pred_ds, category_idxs)
 
 
 def mean_average_precision_and_recall(

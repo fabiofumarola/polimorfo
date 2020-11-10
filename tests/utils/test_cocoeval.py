@@ -13,6 +13,13 @@ def test_generate_predictions():
     assert df['IOU'].mean() == 1.
 
 
+def test_generate_predictions_one_class():
+    ds_path = BASE_PATH / 'hair_drier_toaster_bear.json'
+    df = cocoeval.generate_predictions(ds_path, ds_path, category_idxs=[1])
+    assert len(df) > 0
+    assert df['IOU'].mean() > 0.
+
+
 def test_mean_average_precision_and_recall():
     ds_path = BASE_PATH / 'hair_drier_toaster_bear.json'
     df = cocoeval.generate_predictions(ds_path, ds_path)
