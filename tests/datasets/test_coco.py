@@ -1,3 +1,4 @@
+from typing import List
 import pytest
 from pytest import fixture
 from pathlib import Path
@@ -158,3 +159,13 @@ def test_update_images_path(coco_test: CocoDataset):
     coco_test.update_images_path(lambda x: Path(x).name)
     coco_test.reindex()
     assert coco_test.imgs[1]['file_name'] == '000000001442.jpg'
+
+
+def test_get_annotations_for_image(coco_test: CocoDataset):
+    coco_test.reindex()
+    img_idx = 1
+    ann_idxs = coco_test.index.imgidx_to_annidxs[img_idx]
+    coco_test.remove_annotations(ann_idxs)
+    anns = coco_test.get_annotations(img_idx)
+    assert isinstance(anns, list)
+    assert len(anns) == 0

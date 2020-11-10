@@ -967,6 +967,9 @@ class Index(object):
         self.imgidx_to_annidxs: DefaultDict[int, Set[int]] = defaultdict(set)
         self.catidx_to_annidxs: DefaultDict[int, Set[int]] = defaultdict(set)
 
+        for img_idx in coco.imgs.keys():
+            self.imgidx_to_annidxs[img_idx] = set()
+
         for idx, ann_meta in coco.anns.items():
             self.catidx_to_imgidxs[ann_meta['category_id']].add(
                 (ann_meta['image_id']))
