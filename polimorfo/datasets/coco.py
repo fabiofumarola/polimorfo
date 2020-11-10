@@ -779,6 +779,7 @@ class CocoDataset():
 
     def show_image(self,
                    img_idx: int = None,
+                   img_name: str = None,
                    anns_idx: List[int] = None,
                    ax=None,
                    title: str = None,
@@ -793,6 +794,7 @@ class CocoDataset():
         Args:
             img_idx (int, optional): the idx of the image to load (Optional: None)
                 in case the value is not specified take a random id
+            img_name (str, optional): the name of the image to load
             anns_idx (List[int], optional): [description]. Defaults to None.
             ax ([type], optional): [description]. Defaults to None.
             title (str, optional): [description]. Defaults to None.
@@ -808,6 +810,13 @@ class CocoDataset():
         """
         if img_idx is None:
             img_idx = np.random.randint(0, self.img_id)
+
+        if img_name is not None:
+            values = [
+                idx for idx, img_meta in self.imgs.items()
+                if img_meta['file_name'] == img_name
+            ]
+            img_idx = img_idx if len(values) == 0 else values[0]
 
         img = self.load_image(img_idx)
 

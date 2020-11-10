@@ -43,7 +43,7 @@ def __best_match(pred_anns: List, gt_img_meta: Dict, gt_ann_id: int,
 
     # false negative as default
     best_values = [
-        img_path, gt_ann_id, -1, gt_class_id, 0, 0, 0, 0, 1, gt_area,
+        img_path, gt_ann_id, -1, gt_class_id, -1, 0, 0, 0, 1, gt_area,
         sys.float_info.max, 'false_negative'
     ]
     for pred_ann in pred_anns:
