@@ -2,7 +2,7 @@ tqdm==4.51.0
 numpy==1.19.4
 lxml==4.6.1
 xmljson==0.2.1
-requests==2.24.0
+requests==2.25.0
 Pillow==8.0.1
 matplotlib==3.3.2
 scikit-image==0.17.2
