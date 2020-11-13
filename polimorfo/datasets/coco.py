@@ -535,6 +535,7 @@ class CocoDataset():
             target = np.zeros((height, width), dtype=np.uint8)
             already_written = []
 
+            # write each category and mask into an array
             for src_idx in range(len(masks)):
                 src_mask = masks[src_idx]
                 order_list = [(cats[src_idx], src_mask)]
@@ -549,17 +550,20 @@ class CocoDataset():
                     if count_intersection == dst_mask.sum():
                         order_list.append((cats[dst_idx], dst_mask))
 
+                # sort the mask from the bigger to the smaller
                 order_list = sorted(order_list,
                                     key=lambda idx_mask: idx_mask[1].sum(),
                                     reverse=True)
+                # write the mask in order from the larger to the smaller
+                # so that we keep smaller boxes in the segmentation map
                 for cat_id, mask in order_list:
-                    if cat_id is already_written:
-                        continue
+                    # if cat_id is already_written:
+                    #     continue
                     if remapping_dict is not None and cat_id in remapping_dict:
                         target[mask == 1] = remapping_dict[cat_id]
                     else:
                         target[mask == 1] = cat_id
-                    already_written.append(cat_id)
+                    # already_written.append(cat_id)
 
         else:
             target = np.zeros((height, width), dtype=np.uint8)

@@ -7,8 +7,9 @@ from skimage import measure
 from matplotlib.patches import Polygon, Rectangle
 import matplotlib
 import matplotlib.pyplot as plt
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 from enum import Enum
+from PIL import Image
 
 
 def change_color_brightness(color: Tuple, brightness_factor: float):
@@ -87,7 +88,7 @@ class BoxType(Enum):
     xywh = 2
 
 
-def draw_instances(img: np.ndarray,
+def draw_instances(img: Union[Image.Image, np.ndarray],
                    boxes: np.ndarray,
                    labels: np.ndarray,
                    scores: np.ndarray,
@@ -125,6 +126,14 @@ def draw_instances(img: np.ndarray,
     Returns:
         [type]: [description]
     """
+
+    if len(boxes.shape) != 2:
+        raise ValueError('the shape of the boxes should be (N_BOXES, 4)')
+
+    if len(masks.shape) != 3:
+        raise ValueError(
+            'the shape of the masks should be (N_MASKS, HEIGHT, WIDTH)')
+
     labels_names = create_text_labels(labels, scores, idx_class_dict)
 
     if colors is None:
@@ -136,7 +145,11 @@ def draw_instances(img: np.ndarray,
     if only_class_idxs is None:
         only_class_idxs = list(idx_class_dict.keys())
 
-    width, height = img.size
+    if isinstance(img, Image.Image):
+        width, height = img.size
+    else:
+        height, width = img.shape[:2]
+
     ax.set_ylim(height + 10, -10)
     ax.set_xlim(-10, width + 10)
     ax.axis('off')
