@@ -635,7 +635,7 @@ class CocoDataset():
 
         Args:
             image_path (str): the actual path where the image is place. 
-                It need that to compute the image metadata
+                It is needed to compute the image metadata
 
         Returns:
             int: the img id
@@ -883,7 +883,7 @@ class CocoDataset():
         return ax
 
     def show_images(self,
-                    img_idxs: Union[List[int], int] = None,
+                    idxs_or_num: Union[List[int], int] = None,
                     num_cols=4,
                     figsize=(32, 32),
                     show_masks=True,
@@ -905,17 +905,17 @@ class CocoDataset():
         Returns:
             plt.Figure: [description]
         """
-        if not img_idxs:
+        if idxs_or_num is None:
             img_idxs = np.random.choice(list(self.imgs.keys()), 8,
                                         False).tolist()
-        elif isinstance(img_idxs, int):
-            img_idxs = np.random.choice(list(self.imgs.keys()), img_idxs,
+        elif isinstance(idxs_or_num, int):
+            img_idxs = np.random.choice(list(self.imgs.keys()), idxs_or_num,
                                         False).tolist()
 
         num_rows = len(img_idxs) // num_cols
         fig = plt.figure(figsize=figsize)
 
-        gs = gridspec.GridSpec(num_rows, num_cols)
+        gs = gridspec.GridSpec(num_rows, num_cols, figure=fig)
         gs.update(wspace=0.025, hspace=0.05)    # set the spacing between axes.
 
         class_name_dict = {idx: cat['name'] for idx, cat in self.cats.items()}

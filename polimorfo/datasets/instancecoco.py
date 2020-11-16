@@ -46,17 +46,22 @@ class InstanceCoco(CocoDataset):
         """
 
         if len(labels.shape) != 1:
-            raise ValueError('labels.shape should equal to 1, (n_labels,)')
+            raise ValueError(
+                f'labels.shape should equal to 1, (n_labels,) while current has shape {labels.shape}'
+            )
 
         if len(boxes.shape) != 2:
-            raise ValueError('boxes.shape should equal to 2 (n_labels, 4)')
+            raise ValueError(
+                f'boxes.shape should equal to 2 (n_labels, 4) while current has shape {boxes.shape}'
+            )
 
         if masks is not None:
-            masks = masks.squeeze()
+            masks = masks.squeeze(0)
 
             if len(masks.shape) != 3:
                 raise ValueError(
-                    'masks.shape should equal to 3, (n_labels, Height, Width)')
+                    f'masks.shape should equal to 3, (n_labels, Height, Width) while current has shape {masks.shape}'
+                )
 
         if len(scores.shape) != 1:
             raise ValueError('scores.shape should equal to 1, (n_labels,)')

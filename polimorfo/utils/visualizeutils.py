@@ -89,10 +89,10 @@ class BoxType(Enum):
 
 
 def draw_instances(img: Union[Image.Image, np.ndarray],
-                   boxes: np.ndarray,
-                   labels: np.ndarray,
-                   scores: np.ndarray,
-                   masks: np.ndarray,
+                   boxes: Union[np.ndarray, List],
+                   labels: Union[np.ndarray, List],
+                   scores: Union[np.ndarray, List],
+                   masks: Union[np.ndarray, List],
                    idx_class_dict: Dict[int, str],
                    title: str = '',
                    figsize: Tuple = (16, 8),
@@ -127,10 +127,10 @@ def draw_instances(img: Union[Image.Image, np.ndarray],
         [type]: [description]
     """
 
-    if len(boxes.shape) != 2:
+    if boxes is not None and len(boxes) > 0 and len(np.array(boxes).shape) != 2:
         raise ValueError('the shape of the boxes should be (N_BOXES, 4)')
 
-    if len(masks.shape) != 3:
+    if masks is not None and len(masks) > 0 and len(np.array(masks).shape) != 3:
         raise ValueError(
             'the shape of the masks should be (N_MASKS, HEIGHT, WIDTH)')
 
@@ -171,19 +171,19 @@ def draw_instances(img: Union[Image.Image, np.ndarray],
         if show_masks:
             mask = np.squeeze(masks[idx, ...])
         color = colors[label_id]
-        box = boxes[idx]
-
-        if box_type.value == BoxType.xyxy.value:
-            x0, y0, x1, y1 = box
-            x, y, w, h = x0, y0, x1 - x0, y1 - y0
-        else:
-            x, y, w, h = box
-
-        area = w * h
-        if area < min_area:
-            continue
 
         if show_boxes:
+            box = boxes[idx]
+            if box_type.value == BoxType.xyxy.value:
+                x0, y0, x1, y1 = box
+                x, y, w, h = x0, y0, x1 - x0, y1 - y0
+            else:
+                x, y, w, h = box
+
+            area = w * h
+            if area < min_area:
+                continue
+
             p = Rectangle((x, y),
                           w,
                           h,
