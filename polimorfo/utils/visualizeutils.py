@@ -128,11 +128,14 @@ def draw_instances(img: Union[Image.Image, np.ndarray],
     """
 
     if boxes is not None and len(boxes) > 0 and len(np.array(boxes).shape) != 2:
-        raise ValueError('the shape of the boxes should be (N_BOXES, 4)')
-
-    if masks is not None and len(masks) > 0 and len(np.array(masks).shape) != 3:
         raise ValueError(
-            'the shape of the masks should be (N_MASKS, HEIGHT, WIDTH)')
+            f'the shape of the boxes should be (N_BOXES, 4) while shape is {np.array(boxes).shape}'
+        )
+
+    if masks is not None and len(masks) > 0 and len(np.array(masks).shape) < 3:
+        raise ValueError(
+            f'the shape of the masks should be (N_MASKS, HEIGHT, WIDTH) while shape is {np.array(masks).shape}'
+        )
 
     labels_names = create_text_labels(labels, scores, idx_class_dict)
 
