@@ -20,18 +20,25 @@ def mask_to_polygon(mask, min_score=0.5):
     polygons = polygons[0] if len(polygons) == 2 else polygons[1]
     polygons = [polygon.flatten().tolist() for polygon in polygons]
     # add filter to remove invalid polygons
-    print(polygons)
-    polygons = [polygon for polygon in polygons if len(polygon) > 8]
-
+    polygons = [polygon for polygon in polygons if len(polygon) >= 8]
     return polygons
 
 
 def polygons_to_mask(polygons, height, width):
-    if len(polygons) == 0:
-        return None
+    """convert polygons to mask. Filter all the polygons with less than 4 points
 
-    if len(polygons[0]) < 8:
-        return None
+    Args:
+        polygons ([type]): [description]
+        height ([type]): [description]
+        width ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    polygons = [polygon for polygon in polygons if len(polygon) >= 8]
+
+    if len(polygons) == 0:
+        return np.zeros((height, width), np.uint8)
 
     rle = mask_util.frPyObjects(polygons, height, width)
     rle = mask_util.merge(rle)

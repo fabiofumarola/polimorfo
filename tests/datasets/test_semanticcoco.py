@@ -48,7 +48,7 @@ def test_call_count_statistics():
     ann_idx = ds.add_annotations_from_scores(img_id, mask_logits)
     # ds.reindex()
 
-    print(ds.cats_annotations_count())
-    print(ds.cats_images_count())
+    print(ds.count_annotations_per_category())
+    print(ds.count_images_per_category())
 
     assert len(ann_idx) > 0

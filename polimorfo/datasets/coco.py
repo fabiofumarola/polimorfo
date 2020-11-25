@@ -3,7 +3,7 @@ import json
 from numpy.lib.utils import deprecate
 from tqdm import tqdm
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, Any, Tuple
+from typing import DefaultDict, Dict, List, Tuple, Union, Set
 import logging
 from PIL import Image
 import numpy as np
@@ -13,6 +13,7 @@ from ..utils import maskutils, visualizeutils
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import copy
+from deprecated import deprecated
 
 from enum import Enum
 
@@ -56,8 +57,8 @@ class CocoDataset():
 
         # contains the next available id
         self.cat_id = 1
-        self.img_id = 0
-        self.ann_id = 0
+        self.img_id = 1
+        self.ann_id = 1
         self.index = None
 
         self.info = {
@@ -108,6 +109,10 @@ class CocoDataset():
 
             self.index = Index(self)
 
+    @property
+    def images_path(self):
+        return self.__image_folder
+
     def copy(self):
         new_coco = CocoDataset('fake.json',
                                image_path=self.__image_folder.as_posix())
@@ -123,7 +128,7 @@ class CocoDataset():
 
         return new_coco
 
-    def reindex(self):
+    def reindex(self, by_image_name=True):
         """reindex images and annotations to be zero based and categories one based
         """
         old_new_catidx = dict()
@@ -138,7 +143,13 @@ class CocoDataset():
 
         old_new_imgidx = dict()
         new_imgs = dict()
-        for new_idx, (old_idx, img_meta) in tqdm(enumerate(self.imgs.items()),
+        if by_image_name:
+            sorted_imgs_items = sorted(self.imgs.items(),
+                                       key=lambda x: x[1]['file_name'])
+        else:
+            sorted_imgs_items = self.imgs.items()
+
+        for new_idx, (old_idx, img_meta) in tqdm(enumerate(sorted_imgs_items),
                                                  'reindex images'):
             old_new_imgidx[old_idx] = new_idx
             img_meta = img_meta.copy()
@@ -177,11 +188,14 @@ class CocoDataset():
         for img_meta in tqdm(self.imgs.values()):
             img_meta['file_name'] = func(img_meta['file_name'])
 
-    def get_annotations(self, img_idx: int) -> List:
+    def get_annotations(self,
+                        img_idx: int,
+                        category_idxs: List[int] = None) -> List:
         """returns the annotations of the given image
 
         Args:
             img_idx (int): the image idx
+            category_idxs (List[int]): the list of the category to filter the returned annotations
 
         Returns:
             List: a list of the annotations in coco format
@@ -189,12 +203,19 @@ class CocoDataset():
         if not self.index:
             self.reindex()
 
-        anns_idx = self.index.img_to_anns.get(img_idx)
-        if anns_idx is None:
-            return []
-        return [self.anns[idx] for idx in anns_idx]
+        if category_idxs is None:
+            category_idxs = list(self.cats.keys())
 
-    def compute_area(self):
+        anns_idx = self.index.imgidx_to_annidxs.get(img_idx)
+        annotations = []
+        for idx in anns_idx:
+            ann = self.anns[idx]
+            if ann['category_id'] in category_idxs:
+                annotations.append(ann)
+
+        return annotations
+
+    def compute_area(self) -> None:
         """compute the area of the annotations
         """
         for ann in tqdm(self.anns.values(), desc='process images'):
@@ -207,7 +228,7 @@ class CocoDataset():
         """
         return len(self.imgs)
 
-    def merge_categories(self, cat_to_merge: List[str], new_cat: str):
+    def merge_categories(self, cat_to_merge: List[str], new_cat: str) -> None:
         """ Merge two or more categories labels to a new single category.
             Remove from __content the category to be merged and update
             annotations cat_ids and reindex data with update content.
@@ -222,7 +243,7 @@ class CocoDataset():
         ]
         self.merge_category_ids(catidx_to_merge, new_cat)
 
-    def merge_category_ids(self, cat_to_merge: List[int], new_cat: str):
+    def merge_category_ids(self, cat_to_merge: List[int], new_cat: str) -> None:
         """ Merge two or more categories labels to a new single category.
             Remove from __content the category to be merged and update
             annotations cat_ids and reindex data with update content.
@@ -300,7 +321,12 @@ class CocoDataset():
 
         print('removed %d images' % (len(to_remove_idx)))
 
+    @deprecated(version='0.9.21',
+                reason='you should use count_images_per_category')
     def cats_images_count(self):
+        return self.count_images_per_category()
+
+    def count_images_per_category(self):
         """get the number of images per category
         Returns:
             list -- a list of tuples category number of images
@@ -309,11 +335,16 @@ class CocoDataset():
             self.reindex()
 
         return {
-            self.cats[cat_id]['name']: len(imgs_list)
-            for cat_id, imgs_list in self.index.cat_to_imgs.items()
+            self.cats[cat_id]['name']: len(set(imgs_list))
+            for cat_id, imgs_list in self.index.catidx_to_imgidxs.items()
         }
 
+    @deprecated(version='0.9.21',
+                reason='you should use count_annotations_per_category')
     def cats_annotations_count(self):
+        return self.count_annotations_per_category()
+
+    def count_annotations_per_category(self):
         """the number of annotations per category
         Returns:
             list -- a list of tuples (category_name, number of annotations)
@@ -322,8 +353,8 @@ class CocoDataset():
             self.reindex()
 
         return {
-            self.cats[cat_id]['name']: len(anns_list)
-            for cat_id, anns_list in self.index.cat_to_anns.items()
+            self.cats[cat_id]['name']: len(set(anns_list))
+            for cat_id, anns_list in self.index.catidx_to_annidxs.items()
         }
 
     def keep_categories(self, ids: List[int], remove_images: bool = False):
@@ -369,9 +400,8 @@ class CocoDataset():
         }
 
         catnames_to_remove = {
-            cat_name
-            for cat_name, count in self.cats_annotations_count().items()
-            if count == 0
+            cat_name for cat_name, count in
+            self.count_annotations_per_category().items() if count == 0
         }
 
         self.cats = {
@@ -435,7 +465,7 @@ class CocoDataset():
                 json.dump(self.dumps(), fp)
         elif exp_format.value is self.ExportFormat.segmentation.value:
             # create a segmentation folder
-            if path:
+            if path is not None:
                 segments_path = path
             else:
                 segments_path = self.__image_folder.parent / 'segments'
@@ -444,7 +474,7 @@ class CocoDataset():
             # save a png of the masks
             for img_idx, img_meta in tqdm(
                     self.imgs.items(),
-                    f'savig images in {segments_path.as_posix()}'):
+                    f'savig masks in {segments_path.as_posix()}'):
                 name = '.'.join(
                     Path(img_meta['file_name']).name.split('.')[:-1])
                 segm_path = segments_path / (name + '.png')
@@ -453,12 +483,41 @@ class CocoDataset():
         else:
             raise ValueError('export format not valid')
 
-    def get_segmentation_mask(self, img_idx: int, cats_idx: List[int] = None):
+    def save_segmentation_masks(self,
+                                path: Union[str, Path] = None,
+                                cats_idx: List[int] = None,
+                                remapping_dict: Dict[int, int] = None) -> None:
+        """save the segmentation mask for the given dataset
+
+        Args:
+            path (Union[str, Path], optional): the path to save the masks. Defaults to None.
+            cats_idx (List[int], optional): [an optional filter over the classes]. Defaults to None.
+            remapping_dict (Dict[int, int], optional): a remapping dictionary for the index to save. Defaults to None.
+        """
+        if path is None:
+            path = self.__image_folder.parent / 'segments'
+        else:
+            path = Path(path)
+        path.mkdir(exist_ok=True, parents=True)
+
+        for img_idx, img_meta in tqdm(self.imgs.items(),
+                                      f'saving masks in {path.as_posix()}'):
+            name = '.'.join(Path(img_meta['file_name']).name.split('.')[:-1])
+            segm_path = path / (name + '.png')
+            segm_img = self.get_segmentation_mask(img_idx, cats_idx,
+                                                  remapping_dict)
+            segm_img.save(segm_path)
+
+    def get_segmentation_mask(self,
+                              img_idx: int,
+                              cats_idx: List[int] = None,
+                              remapping_dict: Dict[int, int] = None):
         """generate a mask for the given image idx
 
         Args:
             img_idx (int): [the id of the image]
             cats_idx (List[int], optional): [an optional filter over the classes]. Defaults to None.
+            remapping_dict (Dict[int, int], optional): [description]. Defaults to None.
 
         Returns:
             [type]: [description]
@@ -476,6 +535,7 @@ class CocoDataset():
             target = np.zeros((height, width), dtype=np.uint8)
             already_written = []
 
+            # write each category and mask into an array
             for src_idx in range(len(masks)):
                 src_mask = masks[src_idx]
                 order_list = [(cats[src_idx], src_mask)]
@@ -490,14 +550,20 @@ class CocoDataset():
                     if count_intersection == dst_mask.sum():
                         order_list.append((cats[dst_idx], dst_mask))
 
+                # sort the mask from the bigger to the smaller
                 order_list = sorted(order_list,
                                     key=lambda idx_mask: idx_mask[1].sum(),
                                     reverse=True)
+                # write the mask in order from the larger to the smaller
+                # so that we keep smaller boxes in the segmentation map
                 for cat_id, mask in order_list:
-                    if cat_id is already_written:
-                        continue
-                    target[mask == 1] = cat_id
-                    already_written.append(cat_id)
+                    # if cat_id is already_written:
+                    #     continue
+                    if remapping_dict is not None and cat_id in remapping_dict:
+                        target[mask == 1] = remapping_dict[cat_id]
+                    else:
+                        target[mask == 1] = cat_id
+                    # already_written.append(cat_id)
 
         else:
             target = np.zeros((height, width), dtype=np.uint8)
@@ -564,22 +630,24 @@ class CocoDataset():
         self.cat_id += 1
         return self.cat_id - 1
 
-    def add_image(self, image_path: str) -> int:
+    def add_image(self, src_img_path: str, dst_img_path: str = None) -> int:
         """add an image to the dataset
 
         Args:
             image_path (str): the actual path where the image is place. 
-                It need that to compute the image metadata
+                It is needed to compute the image metadata
 
         Returns:
             int: the img id
         """
-        img = Image.open(image_path)
+        img_path = Path(src_img_path).name if dst_img_path is None else Path(
+            dst_img_path).as_posix()
+        img = Image.open(src_img_path)
         self.imgs[self.img_id] = {
             'id': self.img_id,
             'width': img.width,
             'height': img.height,
-            'file_name': Path(image_path).name,
+            'file_name': img_path,
             'flickr_url': '',
             'coco_url': '',
             'data_captured': datetime.now().date().isoformat()
@@ -717,6 +785,7 @@ class CocoDataset():
 
     def show_image(self,
                    img_idx: int = None,
+                   img_name: str = None,
                    anns_idx: List[int] = None,
                    ax=None,
                    title: str = None,
@@ -724,12 +793,15 @@ class CocoDataset():
                    colors=None,
                    show_boxes=False,
                    show_masks=True,
-                   min_score=0.5) -> plt.Axes:
+                   min_score=0.5,
+                   min_area: int = 0,
+                   cats_idx: List[int] = None) -> plt.Axes:
         """show an image with its annotations
 
         Args:
             img_idx (int, optional): the idx of the image to load (Optional: None)
                 in case the value is not specified take a random id
+            img_name (str, optional): the name of the image to load
             anns_idx (List[int], optional): [description]. Defaults to None.
             ax ([type], optional): [description]. Defaults to None.
             title (str, optional): [description]. Defaults to None.
@@ -738,6 +810,7 @@ class CocoDataset():
             show_boxes (bool, optional): [description]. Defaults to False.
             show_masks (bool, optional): [description]. Defaults to True.
             min_score (float, optional): [description]. Defaults to 0.5.
+            cats_idx (List, optional): the list of categories to show. Defaults to None to display all the categories
 
         Returns:
             plt.Axes: [description]
@@ -745,14 +818,24 @@ class CocoDataset():
         if img_idx is None:
             img_idx = np.random.randint(0, self.img_id)
 
+        if img_name is not None:
+            values = [
+                idx for idx, img_meta in self.imgs.items()
+                if img_meta['file_name'] == img_name
+            ]
+            img_idx = img_idx if len(values) == 0 else values[0]
+
         img = self.load_image(img_idx)
 
+        if title is None:
+            title = self.imgs[img_idx]['file_name']
+
         if anns_idx is None:
-            anns = [
-                ann for ann in self.anns.values() if ann['image_id'] == img_idx
-            ]
-        else:
-            anns = [self.anns[i] for i in anns_idx]
+            anns_idx = self.index.imgidx_to_annidxs[img_idx]
+        anns = [self.anns[i] for i in anns_idx]
+
+        if cats_idx is not None:
+            anns = [ann for ann in anns if ann['category_id'] in cats_idx]
 
         boxes = []
         labels = []
@@ -764,8 +847,6 @@ class CocoDataset():
             if 'segmentation' in ann:
                 mask = maskutils.polygons_to_mask(ann['segmentation'],
                                                   img.height, img.width)
-                if mask is None:
-                    mask = np.zeros((img.width, img.height))
                 masks.append(mask)
             if 'score' in ann:
                 scores.append(float(ann['score']))
@@ -798,38 +879,45 @@ class CocoDataset():
                                       show_boxes=show_boxes,
                                       show_masks=show_masks,
                                       min_score=min_score,
+                                      min_area=min_area,
                                       box_type=visualizeutils.BoxType.xywh)
 
         return ax
 
     def show_images(self,
-                    img_idxs: List[int] = None,
+                    idxs_or_num: Union[List[int], int] = None,
                     num_cols=4,
                     figsize=(32, 32),
                     show_masks=True,
                     show_boxes=False,
-                    min_score=0.5) -> plt.Figure:
+                    min_score: float = 0.5,
+                    min_area: int = 0,
+                    cats_idx: List[int] = None) -> plt.Figure:
         """show the images with their annotations
 
         Args:
-            img_idxs ([List[int]]): a list of image idxs to display (Optional: None)
+            img_idxs (Union[List[int], int]): a list of image idxs to display or the number of images (Optional: None)
                 If None a random sample of 8 images is taken from the db
             num_cols (int, optional): [description]. Defaults to 4.
             figsize (tuple, optional): [description]. Defaults to (32, 32).
             show_masks (bool, optional): [description]. Defaults to True.
             show_boxes (bool, optional): [description]. Defaults to False.
             min_score (float, optional): [description]. Defaults to 0.5.
+            min_area (int, optional): the min area of the annotations to display, Default to 0
         Returns:
             plt.Figure: [description]
         """
-        if not img_idxs:
+        if idxs_or_num is None:
             img_idxs = np.random.choice(list(self.imgs.keys()), 8,
+                                        False).tolist()
+        elif isinstance(idxs_or_num, int):
+            img_idxs = np.random.choice(list(self.imgs.keys()), idxs_or_num,
                                         False).tolist()
 
         num_rows = len(img_idxs) // num_cols
         fig = plt.figure(figsize=figsize)
 
-        gs = gridspec.GridSpec(num_rows, num_cols)
+        gs = gridspec.GridSpec(num_rows, num_cols, figure=fig)
         gs.update(wspace=0.025, hspace=0.05)    # set the spacing between axes.
 
         class_name_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
@@ -843,7 +931,9 @@ class CocoDataset():
                             colors=colors,
                             show_masks=show_masks,
                             show_boxes=show_boxes,
-                            min_score=min_score)
+                            min_score=min_score,
+                            min_area=min_area,
+                            cats_idx=cats_idx)
 
         return fig
 
@@ -893,12 +983,15 @@ class CocoDataset():
 class Index(object):
 
     def __init__(self, coco: CocoDataset) -> None:
-        self.cat_to_imgs: DefaultDict[int, List[int]] = defaultdict(list)
-        self.img_to_anns: DefaultDict[int, List[int]] = defaultdict(list)
-        self.cat_to_anns: DefaultDict[int, List[int]] = defaultdict(list)
+        self.catidx_to_imgidxs: DefaultDict[int, Set[int]] = defaultdict(set)
+        self.imgidx_to_annidxs: DefaultDict[int, Set[int]] = defaultdict(set)
+        self.catidx_to_annidxs: DefaultDict[int, Set[int]] = defaultdict(set)
+
+        for img_idx in coco.imgs.keys():
+            self.imgidx_to_annidxs[img_idx] = set()
 
         for idx, ann_meta in coco.anns.items():
-            self.cat_to_imgs[ann_meta['category_id']].append(
+            self.catidx_to_imgidxs[ann_meta['category_id']].add(
                 (ann_meta['image_id']))
-            self.img_to_anns[ann_meta['image_id']].append((idx))
-            self.cat_to_anns[ann_meta['category_id']].append(idx)
+            self.imgidx_to_annidxs[ann_meta['image_id']].add((idx))
+            self.catidx_to_annidxs[ann_meta['category_id']].add(idx)

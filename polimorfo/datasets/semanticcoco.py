@@ -41,6 +41,10 @@ class SemanticCocoDataset(CocoDataset):
             List[int]: [the idx of the annotations added]
         """
 
+        if not isinstance(masks, np.ndarray):
+            raise ValueError(
+                f'the mask type should be a numpy array not a {type(masks)}')
+
         if np.count_nonzero(masks) == 0:
             return None
 
@@ -67,7 +71,6 @@ class SemanticCocoDataset(CocoDataset):
             for group_idx in range(1, n_groups + 1):
                 group_mask = (groups == group_idx).astype(np.uint8)
                 polygons = maskutils.mask_to_polygon(group_mask)
-
                 if len(polygons) == 0:
                     continue
 

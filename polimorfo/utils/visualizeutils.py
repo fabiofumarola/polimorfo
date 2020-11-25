@@ -7,8 +7,9 @@ from skimage import measure
 from matplotlib.patches import Polygon, Rectangle
 import matplotlib
 import matplotlib.pyplot as plt
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 from enum import Enum
+from PIL import Image
 
 
 def change_color_brightness(color: Tuple, brightness_factor: float):
@@ -87,17 +88,18 @@ class BoxType(Enum):
     xywh = 2
 
 
-def draw_instances(img: np.ndarray,
-                   boxes: np.ndarray,
-                   labels: np.ndarray,
-                   scores: np.ndarray,
-                   masks: np.ndarray,
+def draw_instances(img: Union[Image.Image, np.ndarray],
+                   boxes: Union[np.ndarray, List],
+                   labels: Union[np.ndarray, List],
+                   scores: Union[np.ndarray, List],
+                   masks: Union[np.ndarray, List],
                    idx_class_dict: Dict[int, str],
                    title: str = '',
                    figsize: Tuple = (16, 8),
                    show_boxes: bool = False,
                    show_masks: bool = True,
                    min_score: float = 0.5,
+                   min_area: int = 0,
                    colors: List = None,
                    ax: plt.Axes = None,
                    box_type: BoxType = BoxType.xyxy,
@@ -124,6 +126,17 @@ def draw_instances(img: np.ndarray,
     Returns:
         [type]: [description]
     """
+
+    if boxes is not None and len(boxes) > 0 and len(np.array(boxes).shape) != 2:
+        raise ValueError(
+            f'the shape of the boxes should be (N_BOXES, 4) while shape is {np.array(boxes).shape}'
+        )
+
+    if masks is not None and len(masks) > 0 and len(np.array(masks).shape) < 3:
+        raise ValueError(
+            f'the shape of the masks should be (N_MASKS, HEIGHT, WIDTH) while shape is {np.array(masks).shape}'
+        )
+
     labels_names = create_text_labels(labels, scores, idx_class_dict)
 
     if colors is None:
@@ -135,7 +148,11 @@ def draw_instances(img: np.ndarray,
     if only_class_idxs is None:
         only_class_idxs = list(idx_class_dict.keys())
 
-    width, height = img.size
+    if isinstance(img, Image.Image):
+        width, height = img.size
+    else:
+        height, width = img.shape[:2]
+
     ax.set_ylim(height + 10, -10)
     ax.set_xlim(-10, width + 10)
     ax.axis('off')
@@ -153,18 +170,23 @@ def draw_instances(img: np.ndarray,
         score = scores[idx]
         if score < min_score:
             continue
+
         if show_masks:
             mask = np.squeeze(masks[idx, ...])
         color = colors[label_id]
-        box = boxes[idx]
-
-        if box_type.value == BoxType.xyxy.value:
-            x0, y0, x1, y1 = box
-            x, y, w, h = x0, y0, x1 - x0, y1 - y0
-        else:
-            x, y, w, h = box
 
         if show_boxes:
+            box = boxes[idx]
+            if box_type.value == BoxType.xyxy.value:
+                x0, y0, x1, y1 = box
+                x, y, w, h = x0, y0, x1 - x0, y1 - y0
+            else:
+                x, y, w, h = box
+
+            area = w * h
+            if area < min_area:
+                continue
+
             p = Rectangle((x, y),
                           w,
                           h,
