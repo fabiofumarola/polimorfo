@@ -109,8 +109,8 @@ def test_create_dataset_existing():
     assert len(ds.anns) == 2
 
     assert ds.cat_id == 2
-    assert ds.img_id == 2
-    assert ds.ann_id == 2
+    assert ds.img_id == 3
+    assert ds.ann_id == 3
 
 
 def test_remove_categories():
