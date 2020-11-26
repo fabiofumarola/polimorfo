@@ -630,6 +630,28 @@ class CocoDataset():
         self.cat_id += 1
         return self.cat_id - 1
 
+    def add_image_from_meta(self, image_meta: dict) -> int:
+        """add an image to the dataset
+
+        Args:
+            image_meta (dict): image metadata in Coco format 
+            
+
+        Returns:
+            int: the img id
+        """
+        self.imgs[self.img_id] = {
+            'id': self.img_id,
+            'width': image_meta['width'],
+            'height': image_meta['height'],
+            'file_name': image_meta['file_name'],
+            'flickr_url': '',
+            'coco_url': '',
+            'data_captured': datetime.now().date().isoformat()
+        }
+        self.img_id += 1
+        return self.img_id - 1
+
     def add_image(self, src_img_path: str, dst_img_path: str = None) -> int:
         """add an image to the dataset
 
