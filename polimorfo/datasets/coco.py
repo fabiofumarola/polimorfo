@@ -630,7 +630,7 @@ class CocoDataset():
         self.cat_id += 1
         return self.cat_id - 1
 
-    def add_image(self, src_img_path: str, dst_img_path: str = None) -> int:
+    def add_image(self, file_name: str, width: int, height: int, **kwargs) -> int:
         """add an image to the dataset
 
         Args:
@@ -640,14 +640,11 @@ class CocoDataset():
         Returns:
             int: the img id
         """
-        img_path = Path(src_img_path).name if dst_img_path is None else Path(
-            dst_img_path).as_posix()
-        img = Image.open(src_img_path)
         self.imgs[self.img_id] = {
             'id': self.img_id,
-            'width': img.width,
-            'height': img.height,
-            'file_name': img_path,
+            'width': width,
+            'height': height,
+            'file_name': file_name,
             'flickr_url': '',
             'coco_url': '',
             'data_captured': datetime.now().date().isoformat()
