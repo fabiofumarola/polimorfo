@@ -8,7 +8,7 @@ BASE_PATH = Path(__file__).parent.parent / 'data'
 def test_add_annotations():
     ds = SemanticCocoDataset('fake.json')
 
-    img_id = ds.add_image(BASE_PATH / 'test_nodamage.jpg')
+    img_id = ds.add_image(BASE_PATH / 'test_nodamage.jpg', 100, 100)
     ds.add_category('cat1', 'thing')
     ds.add_category('cat2', 'thing')
 
@@ -23,7 +23,7 @@ def test_add_annotations():
 def test_add_annotations_zero_mask():
     ds = SemanticCocoDataset('fake.json')
 
-    img_id = ds.add_image(BASE_PATH / 'test_nodamage.jpg')
+    img_id = ds.add_image(BASE_PATH / 'test_nodamage.jpg', 100, 100)
     ds.add_category('cat1', 'thing')
     ds.add_category('cat2', 'thing')
 
@@ -38,7 +38,7 @@ def test_add_annotations_zero_mask():
 def test_call_count_statistics():
     ds = SemanticCocoDataset('fake.json')
 
-    img_id = ds.add_image(BASE_PATH / 'test_nodamage.jpg')
+    img_id = ds.add_image(BASE_PATH / 'test_nodamage.jpg', 100, 100)
     ds.add_category('cat1', 'thing')
     ds.add_category('cat2', 'thing')
 

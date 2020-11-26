@@ -80,7 +80,7 @@ def test_create_dataset():
     ds = CocoDataset(annotations_path)
 
     cat_id = ds.add_category('dog', 'animal')
-    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix())
+    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100, 100)
     ds.add_annotation(img_id, cat_id, [1, 2, 3, 4, 5], 10, [0, 0, 256, 256], 0)
 
     assert len(ds) == 1
@@ -99,10 +99,10 @@ def test_create_dataset_existing():
     ds = CocoDataset(BASE_PATH / 'new_coco.json')
 
     cat_id = ds.add_category('dog', 'animal')
-    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix())
+    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100, 100)
     ds.add_annotation(img_id, cat_id, [1, 2, 3, 4, 5], 10, [0, 0, 256, 256], 0)
 
-    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix())
+    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100, 100)
     ds.add_annotation(img_id, cat_id, [1, 2, 3, 4, 5], 10, [0, 0, 256, 256], 0)
 
     assert len(ds.imgs) == 2
@@ -125,7 +125,7 @@ def test_remove_categories():
 def test_remove_categories_and_annotations():
     ds = CocoDataset(BASE_PATH / 'new_coco.json')
     cat_id = ds.add_category('dog', 'animal')
-    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix())
+    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100, 100)
     ds.add_annotation(img_id, cat_id, [1, 2, 3, 4, 5], 10, [0, 0, 256, 256], 0)
 
     assert len(ds.cats) == 1

@@ -1,17 +1,16 @@
-from polimorfo.utils.mergeutils import AnnotationMerger, get_img_meta_by_name
+from polimorfo.utils.mergeutils import merge_datasets, get_img_meta_by_name
 from polimorfo.datasets import CocoDataset
 from pathlib import Path
 import numpy as np
 
 BASE_PATH = Path(__file__).parent.parent / 'data'
 
-def test_annotation_merger():
+def test_merge_datasets():
 
     datasets = [ CocoDataset(coco_path=BASE_PATH / dataset_name) for dataset_name 
                     in ['dataset1.json', 'dataset2.json'] ]
 
-    merger = AnnotationMerger() # fake
-    merged_ds = merger.merge(datasets, BASE_PATH / 'fake_merge.json') 
+    merged_ds = merge_datasets(datasets, BASE_PATH / 'fake_merge.json') 
 
     assert len(merged_ds.anns) == 20
 
