@@ -27,11 +27,11 @@ class CocoDataset():
         Data Format
         ---------
         annotation{
-            "id": int, 
-            "image_id": int, 
-            "category_id": int, 
-            "segmentation": RLE or [polygon], 
-            "area": float, 
+            "id": int,
+            "image_id": int,
+            "category_id": int,
+            "segmentation": RLE or [polygon],
+            "area": float,
             "bbox": [x,y,width,height],
             "iscrowd": 0 or 1,
         }
@@ -574,7 +574,7 @@ class CocoDataset():
         """load an image from the idx
 
         Args:
-            idx ([int]): the idx of the image 
+            idx ([int]): the idx of the image
 
         Returns:
             [Pillow.Image]: []
@@ -634,7 +634,7 @@ class CocoDataset():
         """add an image to the dataset
 
         Args:
-            image_path (str): the actual path where the image is place. 
+            image_path (str): the actual path where the image is place.
                 It is needed to compute the image metadata
 
         Returns:
@@ -935,7 +935,7 @@ class CocoDataset():
         return fig
 
     def split(self, train_perc, val_perc, test_perc=None) -> Tuple:
-        """split the dataset 
+        """split the dataset
 
         Args:
             train_perc ([type]): [description]
@@ -976,6 +976,43 @@ class CocoDataset():
 
         return train_ds, val_ds, test_ds
 
+    def merge(self, cocodatasets: List) -> None:
+        """
+        Update the coco dataset merging data from other coco datasets
+
+        Args:
+            cocodatasets:
+
+        Returns: None
+
+        """
+
+        inv_cats_dict = {cat_dict['name']: cat_dict['id'] for _, cat_dict in self.cats.items()}
+
+        for cocodataset in cocodatasets:
+            coco_dataset_cats = {cat_meta["id"]: cat_meta["name"] for cat_meta in cocodataset.cats.values()}
+            update_cat = coco_dataset_cats == self.cats
+            cocodataset_imgs = [copy.deepcopy(_dict) for _dict in cocodataset.imgs.values()]
+
+            for img in cocodataset_imgs:
+                idx = self.add_image(file_name=img["file_name"], width=img['width'], height=img['height'])
+                annotations = copy.deepcopy(cocodataset.get_annotations(img_idx=img['id']))
+                if not update_cat:
+                    for ann in annotations:
+                        category_name = coco_dataset_cats[ann['category_id']]
+                        if category_name in inv_cats_dict:
+                            id_cat = inv_cats_dict[category_name]
+                        else:
+                            id_cat = self.add_category(name=category_name, supercategory='thing')
+                            inv_cats_dict[category_name] = id_cat
+                        self.add_annotation(img_id=idx,
+                                        cat_id=id_cat,
+                                        segmentation=copy.deepcopy(ann['segmentation']),
+                                        area=ann['area'],
+                                        is_crowd=ann['iscrowd'],
+                                        bbox=copy.deepcopy(ann['bbox']),
+                                        score=ann.get('score', None))
+        self.reindex()
 
 class Index(object):
 

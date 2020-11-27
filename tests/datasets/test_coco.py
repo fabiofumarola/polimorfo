@@ -16,7 +16,6 @@ BASE_PATH = Path(__file__).parent.parent / 'data'
 def dataset_file():
     return BASE_PATH / 'hair_drier_toaster_bear.json'
 
-
 @fixture
 def coco_test(dataset_file):
     return CocoDataset(dataset_file)
@@ -169,3 +168,39 @@ def test_get_annotations_for_image(coco_test: CocoDataset):
     anns = coco_test.get_annotations(img_idx)
     assert isinstance(anns, list)
     assert len(anns) == 0
+
+def test_self_merge():
+    f = BASE_PATH / 'dataset1.json'
+    coco = CocoDataset(f)
+    len_imgs_before = len(coco.imgs)
+    len_anns_before = len(coco.anns)
+    len_cats_before = len(coco.cats)
+    coco.merge([coco])
+    assert len(coco.imgs) == 2 * len_imgs_before
+    assert len(coco.anns) == 2 * len_anns_before
+    assert len(coco.cats) == len_cats_before
+
+def test_merge_2_datasets():
+    f1 = BASE_PATH / 'dataset1.json'
+    f2 = BASE_PATH / 'dataset2.json'
+    coco = CocoDataset(f1)
+    coco2 = CocoDataset(f2)
+    len_imgs_before = len(coco.imgs)
+    len_anns_before = len(coco.anns)
+    len_cats_before = len(coco.cats)
+    coco.merge([coco2])
+    assert len(coco.imgs) == len_imgs_before + len(coco2.imgs)
+    assert len(coco.anns) == len_anns_before + len(coco2.anns)
+    assert len(coco.cats) == len_cats_before
+
+def test_merge_heterogenius_datasets(dataset_file):
+    f1 = BASE_PATH / 'dataset1.json'
+    coco = CocoDataset(f1)
+    coco2 = CocoDataset(dataset_file)
+    len_imgs_before = len(coco.imgs)
+    len_anns_before = len(coco.anns)
+    len_cats_before = len(coco.cats)
+    coco.merge([coco2])
+    assert len(coco.imgs) == len_imgs_before + len(coco2.imgs)
+    assert len(coco.anns) == len_anns_before + len(coco2.anns)
+    assert len(coco.cats) == len_cats_before + len(coco2.cats)
