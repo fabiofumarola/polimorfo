@@ -175,9 +175,9 @@ def test_self_merge():
     len_imgs_before = len(coco.imgs)
     len_anns_before = len(coco.anns)
     len_cats_before = len(coco.cats)
-    coco.merge([coco])
-    assert len(coco.imgs) == 2 * len_imgs_before
-    assert len(coco.anns) == 2 * len_anns_before
+    coco.merge([coco for _ in range(3)])
+    assert len(coco.imgs) == 40 #1 loop returns 10 imgs, 2 loop returns 20, 3 loop returns 40
+    assert len(coco.anns) == 80
     assert len(coco.cats) == len_cats_before
 
 def test_merge_2_datasets():
