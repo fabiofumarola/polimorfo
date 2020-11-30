@@ -3,15 +3,16 @@ from typing import List
 import numpy as np
 import scipy
 from ..utils import maskutils
+from deprecated import deprecated
 
-__all__ = ['SemanticCocoDataset']
+__all__ = ['SemanticCoco', 'SemanticCocoDataset']
 
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
-class SemanticCocoDataset(CocoDataset):
+class SemanticCoco(CocoDataset):
     """
     An extension of the coco dataset to handle the output of a semantic segmentation model
 
@@ -105,3 +106,10 @@ class SemanticCocoDataset(CocoDataset):
         masks = np.argmax(mask_logits, axis=0)
         probs = sigmoid(mask_logits)
         return self.add_annotations(img_id, masks, probs, start_index)
+
+
+@deprecated(version='0.9.34', reason='you should use SemanticCoco')
+class SemanticCocoDataset(SemanticCoco):
+
+    def __init__(self, coco_path: str, image_path: str = None) -> None:
+        super().__init__(coco_path, image_path)

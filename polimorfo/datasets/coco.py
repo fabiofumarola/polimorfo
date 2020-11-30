@@ -483,6 +483,18 @@ class CocoDataset():
         else:
             raise ValueError('export format not valid')
 
+    def save_idx_class_dict(self, path: Union[str, Path] = None) -> Path:
+        if path is None:
+            path = self.images_path.parent / 'idx_class_dict.json'
+
+        idx_class_dict = {
+            str(idx): cat_meta['name'] for idx, cat_meta in self.cats.items()
+        }
+        with open(path, 'w') as f:
+            json.dump(idx_class_dict, f)
+
+        return path
+
     def save_segmentation_masks(self,
                                 path: Union[str, Path] = None,
                                 cats_idx: List[int] = None,
@@ -504,6 +516,8 @@ class CocoDataset():
                                       f'saving masks in {path.as_posix()}'):
             name = '.'.join(Path(img_meta['file_name']).name.split('.')[:-1])
             segm_path = path / (name + '.png')
+            if segm_path.exists():
+                continue
             segm_img = self.get_segmentation_mask(img_idx, cats_idx,
                                                   remapping_dict)
             segm_img.save(segm_path)
@@ -630,7 +644,8 @@ class CocoDataset():
         self.cat_id += 1
         return self.cat_id - 1
 
-    def add_image(self, file_name: str, width: int, height: int, **kwargs) -> int:
+    def add_image(self, file_name: str, width: int, height: int,
+                  **kwargs) -> int:
         """add an image to the dataset
 
         Args:
