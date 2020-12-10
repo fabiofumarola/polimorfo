@@ -644,17 +644,21 @@ class CocoDataset():
         self.cat_id += 1
         return self.cat_id - 1
 
-    def add_image(self, file_name: str, width: int, height: int,
+    def add_image(self, file_name: Union[str, Path], height: int, width: int,
                   **kwargs) -> int:
-        """add an image to the dataset
+        """Add a new image to the dataset .
 
         Args:
-            image_path (str): the actual path where the image is place. 
-                It is needed to compute the image metadata
+            file_name (Union[str, Path]): the file name holding the image
+            height (int): the height of the image
+            width (int): the width of the image
 
         Returns:
-            int: the img id
+            int: [description]
         """
+        if isinstance(file_name, Path):
+            file_name = file_name.as_posix()
+
         self.imgs[self.img_id] = {
             'id': self.img_id,
             'width': width,

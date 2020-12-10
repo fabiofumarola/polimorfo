@@ -1,15 +1,16 @@
 import colorsys
 import random
-import matplotlib.colors as mplc
-import numpy as np
-from numpy.core.shape_base import block
-from skimage import measure
-from matplotlib.patches import Polygon, Rectangle
-import matplotlib
-import matplotlib.pyplot as plt
-from typing import List, Dict, Tuple, Union
 from enum import Enum
+from typing import Dict, List, Tuple, Union
+
+import matplotlib
+import matplotlib.colors as mplc
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.patches import Polygon, Rectangle
+from numpy.core.shape_base import block
 from PIL import Image
+from skimage import measure
 
 
 def change_color_brightness(color: Tuple, brightness_factor: float):
@@ -288,7 +289,7 @@ def draw_segmentation_map(mask: np.ndarray, colors: List[str]):
 
 
 def draw_segmentation(
-        img: np.ndarray,
+        img: Union[np.ndarray, Image.Image],
         mask: np.ndarray,
         idx_name_dict: Dict[int, str],
         colors: List = None,
@@ -301,6 +302,9 @@ def draw_segmentation(
 
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
+
+    if isinstance(img, np.ndarray):
+        img = Image.fromarray(img)
 
     width, height = img.size
     ax.set_ylim(height + 10, -10)
