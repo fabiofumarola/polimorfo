@@ -1,17 +1,15 @@
-from typing import Union, List, Dict, Any
-import numpy as np
 from pathlib import Path
-from polimorfo.datasets import SemanticCocoDataset, CocoDataset, InstanceCoco
-import logging
+from typing import Any, Dict, List, Union
 
-log = logging.getLogger(__name__)
+import numpy as np
+
+from polimorfo.datasets import CocoDataset, InstanceCoco, SemanticCocoDataset
+
 
 def rename_annotation_keys(ann: Dict[str, Union[str, int, list, np.ndarray]]) -> Dict:
     """Renames keys for a Coco annotation in order to feed add_annotation method properly.
-
     Args:
         ann (Dict[str, Union[str, int, list, np.ndarray]]): Coco annotation
-
     Returns:
         Dict: same as input annotation with keys renamed.
     """
@@ -56,10 +54,15 @@ def merge_datasets(datasets: List[Union[SemanticCocoDataset, CocoDataset, Instan
         out_ds.add_category(cat_name, 'thing')
 
     for ds_item, cat_map_item in zip(datasets, cat_map):
+        img_names = { a['file_name']: a['id'] for a in out_ds.imgs.values() }
         # add images
         for img_meta in ds_item.imgs.values():
             # remark: if datasets are not disjoint the might bo overlap here to take care of, i.e. possible multiple definitions of images
-            img_idx = out_ds.add_image(**img_meta)
+            if img_meta['file_name'] not in img_names:
+                img_idx = out_ds.add_image(**img_meta)
+                img_names[img_meta['file_name']] = img_idx
+            else:
+                img_idx = img_names[img_meta['file_name']]
 
             orig_img_idx = img_meta['id']
             anns = ds_item.get_annotations(img_idx=orig_img_idx)
