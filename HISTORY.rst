@@ -129,3 +129,4 @@ History
 -------------------
 
 * fixed bug in mask generation
+* feature that allows us to add a single mask per component when saving segmentation results
