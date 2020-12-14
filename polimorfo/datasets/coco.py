@@ -44,7 +44,10 @@ class CocoDataset():
         coco = 1
         segmentation = 2
 
-    def __init__(self, coco_path: str, image_path: str = None):
+    def __init__(self,
+                 coco_path: str,
+                 image_path: str = None,
+                 verbose: bool = True):
         """Load a dataset from a coco .json dataset
         Arguments:
                         annotations_path {Path} -- Path to coco dataset
@@ -60,6 +63,7 @@ class CocoDataset():
         self.img_id = 1
         self.ann_id = 1
         self.index = None
+        self.verbose = verbose
 
         self.info = {
             "year": datetime.now().year,
@@ -89,19 +93,25 @@ class CocoDataset():
             self.info = data['info']
             self.licenses = data['licenses']
 
-            for cat_meta in tqdm(data['categories'], desc='load categories'):
+            for cat_meta in tqdm(data['categories'],
+                                 desc='load categories',
+                                 disable=not verbose):
                 if cat_meta['id'] > self.cat_id:
                     self.cat_id = cat_meta['id']
                 self.cats[cat_meta['id']] = cat_meta
             self.cat_id += 1
 
-            for img_meta in tqdm(data['images'], desc='load images'):
+            for img_meta in tqdm(data['images'],
+                                 desc='load images',
+                                 disable=not verbose):
                 if img_meta['id'] > self.img_id:
                     self.img_id = img_meta['id']
                 self.imgs[img_meta['id']] = img_meta
             self.img_id += 1
 
-            for ann_meta in tqdm(data['annotations'], desc='load annotations'):
+            for ann_meta in tqdm(data['annotations'],
+                                 desc='load annotations',
+                                 disable=not verbose):
                 if ann_meta['id'] > self.ann_id:
                     self.ann_id = ann_meta['id']
                 self.anns[ann_meta['id']] = ann_meta
@@ -150,7 +160,8 @@ class CocoDataset():
             sorted_imgs_items = self.imgs.items()
 
         for new_idx, (old_idx, img_meta) in tqdm(enumerate(sorted_imgs_items),
-                                                 'reindex images'):
+                                                 'reindex images',
+                                                 disable=not self.verbose):
             old_new_imgidx[old_idx] = new_idx
             img_meta = img_meta.copy()
             img_meta['id'] = new_idx
@@ -185,7 +196,7 @@ class CocoDataset():
             update_images (UpdateImages): a class with a callable function to change the path
         """
 
-        for img_meta in tqdm(self.imgs.values()):
+        for img_meta in tqdm(self.imgs.values(), disable=not self.verbose):
             img_meta['file_name'] = func(img_meta['file_name'])
 
     def get_annotations(self,
@@ -218,7 +229,9 @@ class CocoDataset():
     def compute_area(self) -> None:
         """compute the area of the annotations
         """
-        for ann in tqdm(self.anns.values(), desc='process images'):
+        for ann in tqdm(self.anns.values(),
+                        desc='process images',
+                        disable=not self.verbose):
             ann['area'] = ann['bbox'][2] * ann['bbox'][3]
 
     def __len__(self):
@@ -265,7 +278,9 @@ class CocoDataset():
             "name": new_cat
         }
 
-        for ann_meta in tqdm(self.anns.values(), 'process annotations'):
+        for ann_meta in tqdm(self.anns.values(),
+                             'process annotations',
+                             disable=not self.verbose):
             if ann_meta['category_id'] in cat_to_merge:
                 ann_meta['category_id'] = new_cat_idx
 
@@ -283,7 +298,9 @@ class CocoDataset():
             if cat_idx not in self.cats:
                 continue
 
-            for idx in tqdm(list(self.anns), 'process annotations'):
+            for idx in tqdm(list(self.anns),
+                            'process annotations',
+                            disable=not self.verbose):
                 ann_meta = self.anns[idx]
                 if ann_meta['category_id'] == cat_idx:
                     del self.anns[idx]
@@ -474,7 +491,8 @@ class CocoDataset():
             # save a png of the masks
             for img_idx, img_meta in tqdm(
                     self.imgs.items(),
-                    f'savig masks in {segments_path.as_posix()}'):
+                    f'savig masks in {segments_path.as_posix()}',
+                    disable=not self.verbose):
                 name = '.'.join(
                     Path(img_meta['file_name']).name.split('.')[:-1])
                 segm_path = segments_path / (name + '.png')
@@ -513,7 +531,8 @@ class CocoDataset():
         path.mkdir(exist_ok=True, parents=True)
 
         for img_idx, img_meta in tqdm(self.imgs.items(),
-                                      f'saving masks in {path.as_posix()}'):
+                                      f'saving masks in {path.as_posix()}',
+                                      disable=not self.verbose):
             name = '.'.join(Path(img_meta['file_name']).name.split('.')[:-1])
             segm_path = path / (name + '.png')
             if segm_path.exists():
@@ -593,7 +612,7 @@ class CocoDataset():
         }
         idxs = np.random.choice(list(self.imgs.keys()), sample)
 
-        for idx in tqdm(idxs):
+        for idx in tqdm(idxs, disable=not self.verbose):
             img = np.array(self.load_image(idx))
             for i, color in enumerate(channels.keys()):
                 channels[color] += np.mean(img[..., i].flatten())

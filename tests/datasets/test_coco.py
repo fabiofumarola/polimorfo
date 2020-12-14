@@ -1,13 +1,15 @@
-from typing import List
-import pytest
-from pytest import fixture
-from pathlib import Path
-import shutil
-from polimorfo.datasets import CocoDataset
 import os
+import shutil
+from pathlib import Path
+from typing import List
+
 import numpy as np
+import pytest
 from PIL import Image
+from pytest import fixture
 from tqdm import tqdm
+
+from polimorfo.datasets import CocoDataset
 
 BASE_PATH = Path(__file__).parent.parent / 'data'
 
@@ -20,7 +22,6 @@ def dataset_file():
 @fixture
 def coco_test(dataset_file):
     return CocoDataset(dataset_file)
-
 
 def test_load_coco(dataset_file):
     coco = CocoDataset(dataset_file)
@@ -80,7 +81,8 @@ def test_create_dataset():
     ds = CocoDataset(annotations_path)
 
     cat_id = ds.add_category('dog', 'animal')
-    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100, 100)
+    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100,
+                          100)
     ds.add_annotation(img_id, cat_id, [1, 2, 3, 4, 5], 10, [0, 0, 256, 256], 0)
 
     assert len(ds) == 1
@@ -99,10 +101,12 @@ def test_create_dataset_existing():
     ds = CocoDataset(BASE_PATH / 'new_coco.json')
 
     cat_id = ds.add_category('dog', 'animal')
-    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100, 100)
+    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100,
+                          100)
     ds.add_annotation(img_id, cat_id, [1, 2, 3, 4, 5], 10, [0, 0, 256, 256], 0)
 
-    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100, 100)
+    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100,
+                          100)
     ds.add_annotation(img_id, cat_id, [1, 2, 3, 4, 5], 10, [0, 0, 256, 256], 0)
 
     assert len(ds.imgs) == 2
@@ -125,7 +129,8 @@ def test_remove_categories():
 def test_remove_categories_and_annotations():
     ds = CocoDataset(BASE_PATH / 'new_coco.json')
     cat_id = ds.add_category('dog', 'animal')
-    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100, 100)
+    img_id = ds.add_image((BASE_PATH / 'test_nodamage.jpg').as_posix(), 100,
+                          100)
     ds.add_annotation(img_id, cat_id, [1, 2, 3, 4, 5], 10, [0, 0, 256, 256], 0)
 
     assert len(ds.cats) == 1
