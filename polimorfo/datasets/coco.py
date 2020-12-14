@@ -1,21 +1,21 @@
-from pathlib import Path
-import json
-from numpy.lib.utils import deprecate
-from tqdm import tqdm
-from collections import defaultdict
-from typing import DefaultDict, Dict, List, Tuple, Union, Set
-import logging
-from PIL import Image
-import numpy as np
-from datetime import datetime
-from ..utils import maskutils, visualizeutils
-
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 import copy
-from deprecated import deprecated
-
+import json
+import logging
+from collections import defaultdict
+from datetime import datetime
 from enum import Enum
+from pathlib import Path
+from typing import DefaultDict, Dict, List, Set, Tuple, Union
+
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import numpy as np
+from deprecated import deprecated
+from numpy.lib.utils import deprecate
+from PIL import Image
+from tqdm import tqdm
+
+from ..utils import maskutils, visualizeutils
 
 log = logging.getLogger(__name__)
 
@@ -537,51 +537,30 @@ class CocoDataset():
             [type]: [description]
         """
         img_meta = self.imgs[img_idx]
-        width, height = img_meta['width'], img_meta['height']
-        anns = [ann for ann in self.anns.values() if ann['image_id'] == img_idx]
-        if cats_idx:
-            anns = [ann for ann in anns if ann['category_id'] in cats_idx]
+        height, width = img_meta['height'], img_meta['width']
+        anns = self.get_annotations(img_idx, cats_idx)
+        target_image = np.zeros((height, width), dtype=np.uint8)
+
         segmentations = [obj['segmentation'] for obj in anns]
-        if segmentations:
-            masks = maskutils.coco_poygons_to_mask(segmentations, height, width)
-            cats = np.array([obj['category_id'] for obj in anns],
-                            dtype=masks.dtype)
-            target = np.zeros((height, width), dtype=np.uint8)
-            already_written = []
+        if len(segmentations):
+            annotation_masks = maskutils.coco_poygons_to_mask(
+                segmentations, height, width)
+            elements = []
+            for i, obj in enumerate(anns):
+                elements.append({
+                    'id': obj['category_id'],
+                    'area': obj['area'],
+                    'mask': annotation_masks[i]
+                })
+            # order the mask by area
+            elements = sorted(elements, key=lambda x: x['area'], reverse=True)
+            for elem in elements:
+                if remapping_dict is not None and elem['id'] in remapping_dict:
+                    target_image[elem['mask'] == 1] = remapping_dict[elem['id']]
+                else:
+                    target_image[elem['mask'] == 1] = elem['id']
 
-            # write each category and mask into an array
-            for src_idx in range(len(masks)):
-                src_mask = masks[src_idx]
-                order_list = [(cats[src_idx], src_mask)]
-                for dst_idx in range(len(masks)):
-                    if dst_idx == src_idx:
-                        continue
-                    if dst_idx in already_written and src_idx in already_written:
-                        continue
-                    dst_mask = masks[dst_idx]
-                    src_plus_dst = src_mask + dst_mask
-                    count_intersection = np.count_nonzero(src_plus_dst == 2)
-                    if count_intersection == dst_mask.sum():
-                        order_list.append((cats[dst_idx], dst_mask))
-
-                # sort the mask from the bigger to the smaller
-                order_list = sorted(order_list,
-                                    key=lambda idx_mask: idx_mask[1].sum(),
-                                    reverse=True)
-                # write the mask in order from the larger to the smaller
-                # so that we keep smaller boxes in the segmentation map
-                for cat_id, mask in order_list:
-                    # if cat_id is already_written:
-                    #     continue
-                    if remapping_dict is not None and cat_id in remapping_dict:
-                        target[mask == 1] = remapping_dict[cat_id]
-                    else:
-                        target[mask == 1] = cat_id
-                    # already_written.append(cat_id)
-
-        else:
-            target = np.zeros((height, width), dtype=np.uint8)
-        target = Image.fromarray(target)
+        target = Image.fromarray(target_image)
         return target
 
     def load_image(self, idx):
@@ -929,6 +908,8 @@ class CocoDataset():
         elif isinstance(idxs_or_num, int):
             img_idxs = np.random.choice(list(self.imgs.keys()), idxs_or_num,
                                         False).tolist()
+        else:
+            img_idxs = idxs_or_num
 
         num_rows = len(img_idxs) // num_cols
         fig = plt.figure(figsize=figsize)

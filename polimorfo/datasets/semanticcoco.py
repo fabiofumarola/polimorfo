@@ -1,9 +1,11 @@
-from .coco import CocoDataset
 from typing import List
+
 import numpy as np
 import scipy
-from ..utils import maskutils
 from deprecated import deprecated
+
+from ..utils import maskutils
+from .coco import CocoDataset
 
 __all__ = ['SemanticCoco', 'SemanticCocoDataset']
 
@@ -22,6 +24,8 @@ class SemanticCoco(CocoDataset):
                         img_id: int,
                         masks: np.ndarray,
                         probs: np.ndarray,
+                        min_score: float = 0.5,
+                        one_mask_per_class: bool = False,
                         start_index=1) -> List[int]:
         """
         add the annotation from the given masks
@@ -30,6 +34,8 @@ class SemanticCoco(CocoDataset):
             img_id (int): the id of the image to associate the annotations
             masks (np.ndarray): a mask of shape [Height, Width]
             probs (np.ndarray): an array of shape [NClasses, Height, Width]
+            min_score (float, optional): the minimum score to use to filter the generated masks
+            one_mask_per_class (bool, optional): if True save only the largest mask per class (default: False)
             cats_idxs (List, optional): A list that maps the. Defaults to None.
             start_index (int, optional): the index to start generating the coco polygons.
                 Normally, 0 encodes the background. Defaults to 1.
@@ -55,6 +61,10 @@ class SemanticCoco(CocoDataset):
         if len(probs.shape) != 3:
             raise ValueError('masks.shape should equal to 3')
 
+        #zeroing all the pixel with confidence lower than min_score
+        # masks[probs < min_score] = 0
+        probs[probs < min_score] = 0
+
         annotation_ids = []
         # for each class
         for i, class_idx in enumerate(
@@ -67,6 +77,19 @@ class SemanticCoco(CocoDataset):
                 raise ValueError(f'cats {cat_id} not in dataset categories')
 
             groups, n_groups = scipy.ndimage.label(class_mask)
+
+            if one_mask_per_class:
+                largest_area = 0
+                largest_id = 0
+
+                for group_idx in range(1, n_groups + 1):
+                    group_mask = (groups == group_idx).astype(np.uint8)
+                    if group_mask.sum() > largest_area:
+                        largest_area = group_mask.sum()
+                        largest_id = group_idx
+
+                n_groups = 1
+                groups[groups != largest_id] = 0
 
             # get the groups starting from label 1
             for group_idx in range(1, n_groups + 1):
@@ -91,12 +114,16 @@ class SemanticCoco(CocoDataset):
     def add_annotations_from_scores(self,
                                     img_id: int,
                                     mask_logits: np.ndarray,
+                                    min_score: float = 0.5,
+                                    one_mask_per_class: bool = False,
                                     start_index=1) -> List[int]:
         """add the annotations from the logit masks
 
         Args:
             img_id (int): the id of the image to associate the annotations
             mask_logits (np.ndarray): the logits from the semantic model
+            min_score (float, optional): the minimum score to use to filter the generated masks
+            one_mask_per_class (bool, optional): if True save only the largest mask per class (default: False)
             start_index (int, optional): the index to start generating the coco polygons.
                 Normally, 0 encodes the background. Defaults to 1.
 
@@ -105,7 +132,10 @@ class SemanticCoco(CocoDataset):
         """
         masks = np.argmax(mask_logits, axis=0)
         probs = sigmoid(mask_logits)
-        return self.add_annotations(img_id, masks, probs, start_index)
+        # put to zero all the score lower than min_score
+        probs[probs < min_score] = 0
+        return self.add_annotations(img_id, masks, probs, 0, one_mask_per_class,
+                                    start_index)
 
 
 @deprecated(version='0.9.34', reason='you should use SemanticCoco')

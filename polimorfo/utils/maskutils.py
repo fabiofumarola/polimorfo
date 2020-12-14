@@ -1,8 +1,8 @@
 # import cv2
-import pycocotools.mask as mask_util
-import numpy as np
-from skimage import measure
 import cv2
+import numpy as np
+import pycocotools.mask as mask_util
+from skimage import measure
 
 __all__ = [
     'mask_to_polygon', 'polygons_to_mask', 'area', 'bbox',
@@ -33,7 +33,7 @@ def polygons_to_mask(polygons, height, width):
         width ([type]): [description]
 
     Returns:
-        [type]: [description]
+        [type]: a mask of format num_classes, heigth, width
     """
     polygons = [polygon for polygon in polygons if len(polygon) >= 8]
 

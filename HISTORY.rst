@@ -121,6 +121,11 @@ History
 ---------------------
 * add computation of mean average precision and mean average recall per image
 
-0.94 (2020-10-28)
+0.9.4 (2020-10-28)
 ---------------------
 * fixed bug in score computation
+
+0.9.36
+-------------------
+
+* fixed bug in mask generation
