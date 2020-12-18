@@ -130,3 +130,10 @@ History
 
 * fixed bug in mask generation
 * feature that allows us to add a single mask per component when saving segmentation results
+
+
+0.9.38
+-----------------
+
+* add min confidence when displaying prediction from a segmentation mask model
+* now semantic coco accepts only logits to create annotations

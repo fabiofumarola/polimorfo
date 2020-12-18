@@ -3,13 +3,12 @@ import random
 from enum import Enum
 from typing import Dict, List, Tuple, Union
 
-import matplotlib
 import matplotlib.colors as mplc
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Polygon, Rectangle
-from numpy.core.shape_base import block
 from PIL import Image
+from scipy import special
 from skimage import measure
 
 
@@ -140,17 +139,17 @@ def draw_instances(img: Union[Image.Image, np.ndarray],
 
     labels_names = create_text_labels(labels, scores, idx_class_dict)
 
-    if colors is None:
-        colors = generate_colormap(len(idx_class_dict) + 1)
+    colors = generate_colormap(len(idx_class_dict) +
+                               1) if colors is None else colors
 
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
 
-    if only_class_idxs is None:
-        only_class_idxs = list(idx_class_dict.keys())
+    only_class_idxs = list(
+        idx_class_dict.keys()) if only_class_idxs is None else only_class_idxs
 
     if isinstance(img, Image.Image):
-        width, height = img.size
+        width, height = img.width, img.height
     else:
         height, width = img.shape[:2]
 
@@ -261,42 +260,58 @@ def create_text_labels(classes: List[int], scores: List[float],
     return labels
 
 
-def draw_segmentation_map(mask: np.ndarray, colors: List[str]):
-    """draw a segmentation map based on a class mask. 
-    The mask have to contains number that represent the class
+# def draw_segmentation_map(mask: np.ndarray, colors: List[str]):
+#     """draw a segmentation map based on a class mask.
+#     The mask have to contains number that represent the class
 
-    Args:
-        mask (np.ndarray): [description]
-        colors (List[str], optional): [description]. Defaults to None.
+#     Args:
+#         mask (np.ndarray): [description]
+#         colors (List[str], optional): [description]. Defaults to None.
 
-    Returns:
-        [type]: [description]
-    """
-    colors_rgb = np.array([matplotlib.colors.to_rgb(c) for c in colors]) * 255
+#     Returns:
+#         [type]: [description]
+#     """
+#     colors_rgb = np.array([matplotlib.colors.to_rgb(c) for c in colors]) * 255
 
-    r = np.zeros_like(mask).astype(np.uint8)
-    g = np.zeros_like(mask).astype(np.uint8)
-    b = np.zeros_like(mask).astype(np.uint8)
+#     r = np.zeros_like(mask).astype(np.uint8)
+#     g = np.zeros_like(mask).astype(np.uint8)
+#     b = np.zeros_like(mask).astype(np.uint8)
 
-    for c in sorted(np.unique(mask))[1:]:
-        idx = mask == c
-        r[idx] = colors_rgb[c, 0]
-        g[idx] = colors_rgb[c, 1]
-        b[idx] = colors_rgb[c, 2]
+#     for c in sorted(np.unique(mask))[1:]:
+#         idx = mask == c
+#         r[idx] = colors_rgb[c, 0]
+#         g[idx] = colors_rgb[c, 1]
+#         b[idx] = colors_rgb[c, 2]
 
-    rgb = np.stack([r, g, b], axis=2)
-    return rgb
+#     rgb = np.stack([r, g, b], axis=2)
+#     return rgb
 
 
 def draw_segmentation(
         img: Union[np.ndarray, Image.Image],
-        mask: np.ndarray,
+        logits: np.ndarray,
         idx_name_dict: Dict[int, str],
+        min_conf: float,
         colors: List = None,
         title: str = '',
         ax: plt.Axes = None,
         figsize: Tuple[int, int] = (16, 8),
 ):
+    """draw the result from a segmentation model
+
+    Args:
+        img (Union[np.ndarray, Image.Image]): an PIL image or a numpy array
+        logits (np.ndarray): the logits coming from the model with shape (n_classes, H, W)
+        idx_name_dict (Dict[int, str]): 
+        min_conf (float): the min confidence of the mask given as output
+        colors (List, optional): the colors to diplay categories. Defaults to None.
+        title (str, optional): [description]. Defaults to ''.
+        ax (plt.Axes, optional): [description]. Defaults to None.
+        figsize (Tuple[int, int], optional): [description]. Defaults to (16, 8).
+
+    Returns:
+        [plt.Axes]: the ax of the given plot 
+    """
     if colors is None:
         colors = generate_colormap(len(idx_name_dict) + 1)
 
@@ -314,27 +329,33 @@ def draw_segmentation(
 
     out_image = np.array(img).astype(np.uint8)
 
-    for cat in np.unique(mask)[1:]:
-        mask_cat = (mask == cat)
-        cat_name = idx_name_dict[cat]
+    probs = special.softmax(logits, axis=0)
+    masks = probs.argmax(0)
+
+    for cat in np.unique(masks)[1:]:
+        mask = masks == cat
+        conf = np.round(np.nan_to_num(probs[cat, mask].mean()), 2)
+        if conf < min_conf:
+            continue
+        #remove all the pixels with score lower
+        filt_mask = np.copy(mask)
+        filt_mask[probs[cat, ...] < min_conf] = 0
+
+        name = f'{idx_name_dict[cat]} {conf * 100}%'
         color = colors[cat]
 
         # draw text in the center (defined by median) when box is not drawn
         # median is less sensitive to outliers.
-        text_pos = np.median(mask_cat.nonzero(), axis=1)[::-1] - 20
+        text_pos = np.median(filt_mask.nonzero(), axis=1)[::-1] - 20
         # horiz_align = "left"
 
         lighter_color = change_color_brightness(color, brightness_factor=0.7)
         font_size = 10
-        draw_text(ax,
-                  cat_name,
-                  text_pos,
-                  font_size,
-                  horizontal_alignment='left')
+        draw_text(ax, name, text_pos, font_size, horizontal_alignment='left')
 
-        padded_mask = np.zeros((mask_cat.shape[0] + 2, mask_cat.shape[1] + 2),
+        padded_mask = np.zeros((filt_mask.shape[0] + 2, filt_mask.shape[1] + 2),
                                dtype=np.uint8)
-        padded_mask[1:-1, 1:-1] = mask_cat
+        padded_mask[1:-1, 1:-1] = filt_mask
         contours = measure.find_contours(padded_mask, 0.5)
         for verts in contours:
             verts = np.fliplr(verts) - 1

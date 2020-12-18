@@ -3,15 +3,12 @@ from typing import List
 import numpy as np
 import scipy
 from deprecated import deprecated
+from scipy import special
 
 from ..utils import maskutils
 from .coco import CocoDataset
 
 __all__ = ['SemanticCoco', 'SemanticCocoDataset']
-
-
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
 
 
 class SemanticCoco(CocoDataset):
@@ -22,19 +19,17 @@ class SemanticCoco(CocoDataset):
 
     def add_annotations(self,
                         img_id: int,
-                        masks: np.ndarray,
-                        probs: np.ndarray,
-                        min_score: float = 0.5,
+                        logits: np.ndarray,
+                        min_conf: float,
                         one_mask_per_class: bool = False,
                         start_index=1) -> List[int]:
         """
-        add the annotation from the given masks
+        add the annotation from the given logits
 
         Args:
             img_id (int): the id of the image to associate the annotations
-            masks (np.ndarray): a mask of shape [Height, Width]
-            probs (np.ndarray): an array of shape [NClasses, Height, Width]
-            min_score (float, optional): the minimum score to use to filter the generated masks
+            logits (np.ndarray): an array of shape [NClasses, Height, Width]
+            min_conf (float): the minimum confidence used to filter the generated masks
             one_mask_per_class (bool, optional): if True save only the largest mask per class (default: False)
             cats_idxs (List, optional): A list that maps the. Defaults to None.
             start_index (int, optional): the index to start generating the coco polygons.
@@ -48,35 +43,33 @@ class SemanticCoco(CocoDataset):
             List[int]: [the idx of the annotations added]
         """
 
-        if not isinstance(masks, np.ndarray):
+        if not isinstance(logits, np.ndarray):
             raise ValueError(
-                f'the mask type should be a numpy array not a {type(masks)}')
+                f'the mask type should be a numpy array not a {type(logits)}')
 
-        if np.count_nonzero(masks) == 0:
-            return None
-
-        if len(masks.shape) != 2:
-            raise ValueError('masks.shape should equal to 2')
-
-        if len(probs.shape) != 3:
+        if len(logits.shape) != 3:
             raise ValueError('masks.shape should equal to 3')
 
-        #zeroing all the pixel with confidence lower than min_score
-        # masks[probs < min_score] = 0
-        probs[probs < min_score] = 0
+        probs = special.softmax(logits, axis=0)
+        masks = probs.argmax(0)
 
         annotation_ids = []
-        # for each class
-        for i, class_idx in enumerate(
-                np.unique(masks)[start_index:], start_index):
-            class_mask = (masks == class_idx).astype(np.uint8)
-            class_probs = probs[i]
-            cat_id = int(class_idx)
+        for cat_idx in np.unique(masks)[start_index:]:
+            mask = (masks == cat_idx).astype(np.uint8)
+            conf = np.round(np.nan_to_num(probs[cat_idx, mask].mean()), 2)
 
+            if conf < min_conf:
+                continue
+
+            #remove all the pixels with score lower
+            filt_mask = np.copy(mask)
+            filt_mask[probs[cat_idx, ...] < min_conf] = 0
+
+            cat_id = int(cat_idx)
             if cat_id not in self.cats:
                 raise ValueError(f'cats {cat_id} not in dataset categories')
 
-            groups, n_groups = scipy.ndimage.label(class_mask)
+            groups, n_groups = scipy.ndimage.label(filt_mask)
 
             if one_mask_per_class:
                 largest_area = 0
@@ -103,39 +96,12 @@ class SemanticCoco(CocoDataset):
                 area = int(maskutils.area(group_mask))
                 if area == 0:
                     continue
-                segment_probs_mask = group_mask * class_probs
-                score = float(
-                    np.mean(segment_probs_mask[segment_probs_mask > 0]))
+                group_prob_mask = group_mask * probs[cat_idx]
+                score = float(np.mean(group_prob_mask[group_prob_mask > 0]))
                 annotation_ids.append(
                     self.add_annotation(img_id, cat_id, polygons, area, bbox, 0,
                                         score))
         return annotation_ids
-
-    def add_annotations_from_scores(self,
-                                    img_id: int,
-                                    mask_logits: np.ndarray,
-                                    min_score: float = 0.5,
-                                    one_mask_per_class: bool = False,
-                                    start_index=1) -> List[int]:
-        """add the annotations from the logit masks
-
-        Args:
-            img_id (int): the id of the image to associate the annotations
-            mask_logits (np.ndarray): the logits from the semantic model
-            min_score (float, optional): the minimum score to use to filter the generated masks
-            one_mask_per_class (bool, optional): if True save only the largest mask per class (default: False)
-            start_index (int, optional): the index to start generating the coco polygons.
-                Normally, 0 encodes the background. Defaults to 1.
-
-        Returns:
-            List[int]: [the idx of the annotations added]]
-        """
-        masks = np.argmax(mask_logits, axis=0)
-        probs = sigmoid(mask_logits)
-        # put to zero all the score lower than min_score
-        probs[probs < min_score] = 0
-        return self.add_annotations(img_id, masks, probs, 0, one_mask_per_class,
-                                    start_index)
 
 
 @deprecated(version='0.9.34', reason='you should use SemanticCoco')

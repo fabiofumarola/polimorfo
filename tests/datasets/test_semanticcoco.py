@@ -14,10 +14,10 @@ def test_add_annotations():
     ds.add_category('cat1', 'thing')
     ds.add_category('cat2', 'thing')
 
-    mask_logits = np.random.randn(3, 256, 256)
+    mask_logits = np.random.rand(3, 256, 256)
     mask_logits[1:3] += 2
 
-    ann_idx = ds.add_annotations_from_scores(img_id, mask_logits)
+    ann_idx = ds.add_annotations(img_id, mask_logits, .2)
 
     assert len(ann_idx) > 0
 
@@ -29,12 +29,13 @@ def test_add_annotations_one_label_per_class():
     ds.add_category('cat1', 'thing')
     ds.add_category('cat2', 'thing')
 
-    mask_logits = np.random.randn(3, 256, 256)
+    mask_logits = np.random.rand(3, 256, 256)
     mask_logits[1, 0:50, 0:50] = 2
 
-    ann_idx = ds.add_annotations_from_scores(img_id,
-                                             mask_logits,
-                                             one_mask_per_class=True)
+    ann_idx = ds.add_annotations(img_id,
+                                 mask_logits,
+                                 .2,
+                                 one_mask_per_class=True)
     assert len(ann_idx) > 0
 
 
@@ -48,7 +49,7 @@ def test_add_annotations_zero_mask():
     mask_logits = np.zeros((3, 256, 256))
     mask_logits[1:3] += 2
 
-    ann_idx = ds.add_annotations_from_scores(img_id, mask_logits)
+    ann_idx = ds.add_annotations(img_id, mask_logits, .2)
 
     assert len(ann_idx) == 0
 
@@ -60,10 +61,10 @@ def test_call_count_statistics():
     ds.add_category('cat1', 'thing')
     ds.add_category('cat2', 'thing')
 
-    mask_logits = np.random.randn(3, 256, 256)
+    mask_logits = np.random.rand(3, 256, 256)
     mask_logits[1:3] += 2
 
-    ann_idx = ds.add_annotations_from_scores(img_id, mask_logits)
+    ann_idx = ds.add_annotations(img_id, mask_logits, .4)
     # ds.reindex()
 
     print(ds.count_annotations_per_category())
