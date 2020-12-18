@@ -341,7 +341,7 @@ def draw_segmentation(
         filt_mask = np.copy(mask)
         filt_mask[probs[cat, ...] < min_conf] = 0
 
-        name = f'{idx_name_dict[cat]} {conf * 100}%'
+        name = f'{idx_name_dict[cat]} {int(conf * 100)}%'
         color = colors[cat]
 
         # draw text in the center (defined by median) when box is not drawn
