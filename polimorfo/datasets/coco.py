@@ -574,7 +574,7 @@ class CocoDataset():
                     'id': obj['category_id'],
                     'area': obj['area'],
                     'mask': annotation_masks[i],
-                    'score': obj['scoree'] if 'score' in obj else 1.
+                    'score': obj['score'] if 'score' in obj else 1.
                 })
             # order the mask by area
             elements = sorted(elements, key=lambda x: x['area'], reverse=True)
