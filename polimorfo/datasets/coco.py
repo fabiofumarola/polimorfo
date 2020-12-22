@@ -516,13 +516,17 @@ class CocoDataset():
     def save_segmentation_masks(self,
                                 path: Union[str, Path] = None,
                                 cats_idx: List[int] = None,
-                                remapping_dict: Dict[int, int] = None) -> None:
+                                remapping_dict: Dict[int, int] = None,
+                                min_conf: float = .5,
+                                ignore_index: int = 255) -> None:
         """save the segmentation mask for the given dataset
 
         Args:
             path (Union[str, Path], optional): the path to save the masks. Defaults to None.
             cats_idx (List[int], optional): [an optional filter over the classes]. Defaults to None.
             remapping_dict (Dict[int, int], optional): a remapping dictionary for the index to save. Defaults to None.
+            min_conf (float): the min confidence to generate the segment, segments with conf below the threshold are replaced as 255
+            ignore_index (int): the value used to replace segments with confidence below min_conf
         """
         if path is None:
             path = self.__image_folder.parent / 'segments'
@@ -538,7 +542,8 @@ class CocoDataset():
             if segm_path.exists():
                 continue
             segm_img = self.get_segmentation_mask(img_idx, cats_idx,
-                                                  remapping_dict)
+                                                  remapping_dict, min_conf,
+                                                  ignore_index)
             segm_img.save(segm_path)
 
     def get_segmentation_mask(self,
