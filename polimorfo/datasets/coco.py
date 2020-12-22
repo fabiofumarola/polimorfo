@@ -544,13 +544,17 @@ class CocoDataset():
     def get_segmentation_mask(self,
                               img_idx: int,
                               cats_idx: List[int] = None,
-                              remapping_dict: Dict[int, int] = None):
+                              remapping_dict: Dict[int, int] = None,
+                              min_conf: float = .5,
+                              ignore_index: int = 255):
         """generate a mask for the given image idx
 
         Args:
             img_idx (int): [the id of the image]
             cats_idx (List[int], optional): [an optional filter over the classes]. Defaults to None.
             remapping_dict (Dict[int, int], optional): [description]. Defaults to None.
+            min_conf (float): the min confidence to generate the segment, segments with conf below the threshold are replaced as 255
+            ignore_index (int): the value used to replace segments with confidence below min_conf
 
         Returns:
             [type]: [description]
@@ -569,15 +573,21 @@ class CocoDataset():
                 elements.append({
                     'id': obj['category_id'],
                     'area': obj['area'],
-                    'mask': annotation_masks[i]
+                    'mask': annotation_masks[i],
+                    'score': obj['scoree'] if 'score' in obj else 1.
                 })
             # order the mask by area
             elements = sorted(elements, key=lambda x: x['area'], reverse=True)
             for elem in elements:
-                if remapping_dict is not None and elem['id'] in remapping_dict:
-                    target_image[elem['mask'] == 1] = remapping_dict[elem['id']]
+                if elem['score'] < min_conf:
+                    target_image[elem['mask'] == 1] = ignore_index
                 else:
-                    target_image[elem['mask'] == 1] = elem['id']
+                    if remapping_dict is not None and elem[
+                            'id'] in remapping_dict:
+                        target_image[elem['mask'] == 1] = remapping_dict[
+                            elem['id']]
+                    else:
+                        target_image[elem['mask'] == 1] = elem['id']
 
         target = Image.fromarray(target_image)
         return target
