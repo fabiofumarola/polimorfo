@@ -874,7 +874,7 @@ class CocoDataset():
             masks = None
 
         if ax is None:
-            _, ax = plt.subplots(1, 1)
+            _, ax = plt.subplots(1, 1, figsize=figsize)
 
         idx_class_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
         if colors is None:
