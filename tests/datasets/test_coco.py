@@ -23,6 +23,7 @@ def dataset_file():
 def coco_test(dataset_file):
     return CocoDataset(dataset_file)
 
+
 def test_load_coco(dataset_file):
     coco = CocoDataset(dataset_file)
 

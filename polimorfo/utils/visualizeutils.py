@@ -289,7 +289,7 @@ def create_text_labels(classes: List[int], scores: List[float],
 
 def draw_segmentation(
         img: Union[np.ndarray, Image.Image],
-        logits: np.ndarray,
+        logits_or_mask: np.ndarray,
         idx_name_dict: Dict[int, str],
         min_conf: float,
         colors: List = None,
@@ -301,7 +301,9 @@ def draw_segmentation(
 
     Args:
         img (Union[np.ndarray, Image.Image]): an PIL image or a numpy array
-        logits (np.ndarray): the logits coming from the model with shape (n_classes, H, W)
+        logits_or_mask (np.ndarray): it accepts:
+            - the logits coming from the model with shape (n_classes, H, W), or
+            - the mask coming from true annotations with shape (H,W) and containing pixel classification
         idx_name_dict (Dict[int, str]): 
         min_conf (float): the min confidence of the mask given as output
         colors (List, optional): the colors to diplay categories. Defaults to None.
@@ -329,8 +331,12 @@ def draw_segmentation(
 
     out_image = np.array(img).astype(np.uint8)
 
-    probs = special.softmax(logits, axis=0)
-    masks = probs.argmax(0)
+    if len(logits_or_mask.shape) == 2:
+        masks = logits_or_mask
+        probs = np.ones_like(masks)
+    else:
+        probs = special.softmax(logits_or_mask, axis=0)
+        masks = probs.argmax(0)
 
     for cat in np.unique(masks)[1:]:
         mask = masks == cat
