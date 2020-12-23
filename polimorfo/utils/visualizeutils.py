@@ -333,7 +333,7 @@ def draw_segmentation(
 
     if len(logits_or_mask.shape) == 2:
         masks = logits_or_mask
-        probs = np.ones_like(masks)
+        probs = np.ones((len(np.unique(masks)), *masks.shape))
     else:
         probs = special.softmax(logits_or_mask, axis=0)
         masks = probs.argmax(0)
