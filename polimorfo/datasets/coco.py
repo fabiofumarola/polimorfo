@@ -546,6 +546,13 @@ class CocoDataset():
                                                   ignore_index)
             segm_img.save(segm_path)
 
+        cat_idx_dict = dict()
+        for idx, cat in self.cats.items():
+            cat_idx_dict[cat['name']] = idx
+
+        with open(path.parent / 'cat_idx_dict.json', 'w') as f:
+            json.dump(cat_idx_dict, f)
+
     def remap_categories(self, remapping_dict: Dict[int, int]) -> None:
         for ann in tqdm(self.anns.values(), desc='renaming category idxs'):
             if ann['category_id'] in remapping_dict:
