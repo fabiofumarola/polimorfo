@@ -49,6 +49,12 @@ def test_keep_categories(coco_test):
     assert len(coco_test.cats) == 2
 
 
+def test_remap_categories(coco_test):
+    coco_test.remap_categories({80: 1})
+    assert 1 in coco_test.cats
+    assert 80 not in coco_test.cats
+
+
 def test_dumps(coco_test):
     coco_test.keep_categories([80, 89], True)
 

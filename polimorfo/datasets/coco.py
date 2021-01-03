@@ -546,6 +546,23 @@ class CocoDataset():
                                                   ignore_index)
             segm_img.save(segm_path)
 
+    def remap_categories(self, remapping_dict: Dict[int, int]) -> None:
+        for ann in tqdm(self.anns.values(), desc='renaming category idxs'):
+            if ann['category_id'] in remapping_dict:
+                ann['category_id'] = remapping_dict[ann['category_id']]
+
+        cats = dict()
+        for idx, cat in self.cats.items():
+            if idx in remapping_dict:
+                new_idx = remapping_dict[idx]
+            else:
+                new_idx = idx
+            cat['id'] = new_idx
+            cats[new_idx] = cat
+
+        self.cats = cats
+        self.index = Index(self)
+
     def get_segmentation_mask(self,
                               img_idx: int,
                               cats_idx: List[int] = None,

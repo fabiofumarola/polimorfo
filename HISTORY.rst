@@ -137,3 +137,9 @@ History
 
 * add min confidence when displaying prediction from a segmentation mask model
 * now semantic coco accepts only logits to create annotations
+
+
+0.9.39
+------------
+
+* add new method to remap category idxs
