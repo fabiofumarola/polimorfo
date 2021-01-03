@@ -81,7 +81,7 @@ def test_save_segmentation_masks(coco_test):
 
     assert distinct_values == {0, 24}
     shutil.rmtree(out_path.as_posix())
-    shutil.rmtree(out_path.parent / 'cat_idx_dict.json')
+    (out_path.parent / 'cat_idx_dict.json').unlink()
 
 
 def test_create_dataset():

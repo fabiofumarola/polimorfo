@@ -567,7 +567,7 @@ class CocoDataset():
             cat['id'] = new_idx
             cats[new_idx] = cat
 
-        self.cats = cats
+        self.cats = dict(sorted(cats.items(), key=lambda x: x[0]))
         self.index = Index(self)
 
     def get_segmentation_mask(self,
