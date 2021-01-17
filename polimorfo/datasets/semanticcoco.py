@@ -8,7 +8,7 @@ from scipy import special
 from ..utils import maskutils
 from .coco import CocoDataset
 
-__all__ = ['SemanticCoco', 'SemanticCocoDataset']
+__all__ = ["SemanticCoco", "SemanticCocoDataset"]
 
 
 class SemanticCoco(CocoDataset):
@@ -17,12 +17,14 @@ class SemanticCoco(CocoDataset):
 
     """
 
-    def add_annotations(self,
-                        img_id: int,
-                        logits: np.ndarray,
-                        min_conf: float,
-                        one_mask_per_class: bool = False,
-                        start_index=1) -> List[int]:
+    def add_annotations(
+        self,
+        img_id: int,
+        logits: np.ndarray,
+        min_conf: float,
+        one_mask_per_class: bool = False,
+        start_index=1,
+    ) -> List[int]:
         """
         add the annotation from the given logits
 
@@ -45,10 +47,11 @@ class SemanticCoco(CocoDataset):
 
         if not isinstance(logits, np.ndarray):
             raise ValueError(
-                f'the mask type should be a numpy array not a {type(logits)}')
+                f"the mask type should be a numpy array not a {type(logits)}"
+            )
 
         if len(logits.shape) != 3:
-            raise ValueError('masks.shape should equal to 3')
+            raise ValueError("masks.shape should equal to 3")
 
         probs = special.softmax(logits, axis=0)
         masks = probs.argmax(0)
@@ -61,13 +64,13 @@ class SemanticCoco(CocoDataset):
             if conf < min_conf:
                 continue
 
-            #remove all the pixels with score lower
+            # remove all the pixels with score lower
             filt_mask = np.copy(mask)
             filt_mask[probs[cat_idx, ...] < min_conf] = 0
 
             cat_id = int(cat_idx)
             if cat_id not in self.cats:
-                raise ValueError(f'cats {cat_id} not in dataset categories')
+                raise ValueError(f"cats {cat_id} not in dataset categories")
 
             groups, n_groups = scipy.ndimage.label(filt_mask)
 
@@ -99,13 +102,12 @@ class SemanticCoco(CocoDataset):
                 group_prob_mask = group_mask * probs[cat_idx]
                 score = float(np.mean(group_prob_mask[group_prob_mask > 0]))
                 annotation_ids.append(
-                    self.add_annotation(img_id, cat_id, polygons, area, bbox, 0,
-                                        score))
+                    self.add_annotation(img_id, cat_id, polygons, area, bbox, 0, score)
+                )
         return annotation_ids
 
 
-@deprecated(version='0.9.34', reason='you should use SemanticCoco')
+@deprecated(version="0.9.34", reason="you should use SemanticCoco")
 class SemanticCocoDataset(SemanticCoco):
-
     def __init__(self, coco_path: str, image_path: str = None) -> None:
         super().__init__(coco_path, image_path)
