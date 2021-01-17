@@ -143,3 +143,9 @@ History
 ------------
 
 * add new method to remap category idxs
+
+
+0.9.48
+------------
+
+* add new feature to save images and masks to a folder and filter out images and mask with less than k annotations
