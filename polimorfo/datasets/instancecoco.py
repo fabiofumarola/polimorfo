@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 from ..utils import maskutils
 
-__all__ = ['InstanceCoco']
+__all__ = ["InstanceCoco"]
 
 
 def sigmoid(x):
@@ -47,12 +47,12 @@ class InstanceCoco(CocoDataset):
 
         if len(labels.shape) != 1:
             raise ValueError(
-                f'labels.shape should equal to 1, (n_labels,) while current has shape {labels.shape}'
+                f"labels.shape should equal to 1, (n_labels,) while current has shape {labels.shape}"
             )
 
         if len(boxes.shape) != 2:
             raise ValueError(
-                f'boxes.shape should equal to 2 (n_labels, 4) while current has shape {boxes.shape}'
+                f"boxes.shape should equal to 2 (n_labels, 4) while current has shape {boxes.shape}"
             )
 
         if masks is not None:
@@ -60,17 +60,17 @@ class InstanceCoco(CocoDataset):
 
             if len(masks.shape) != 3:
                 raise ValueError(
-                    f'masks.shape should equal to 3, (n_labels, Height, Width) while current has shape {masks.shape}'
+                    f"masks.shape should equal to 3, (n_labels, Height, Width) while current has shape {masks.shape}"
                 )
 
         if len(scores.shape) != 1:
-            raise ValueError('scores.shape should equal to 1, (n_labels,)')
+            raise ValueError("scores.shape should equal to 1, (n_labels,)")
 
         annotation_ids = []
         for i, cat_id in enumerate(labels):
 
             if cat_id not in self.cats:
-                raise ValueError(f'cats {cat_id} not in dataset categories')
+                raise ValueError(f"cats {cat_id} not in dataset categories")
             # convert box to
             x0, y0, x1, y1 = boxes[i]
             w, h = x1 - x0, y1 - y0
@@ -88,6 +88,8 @@ class InstanceCoco(CocoDataset):
 
             score = float(scores[i])
             annotation_ids.append(
-                self.add_annotation(int(img_id), int(cat_id), polygons, area,
-                                    bbox, 0, score))
+                self.add_annotation(
+                    int(img_id), int(cat_id), polygons, area, bbox, 0, score
+                )
+            )
         return annotation_ids

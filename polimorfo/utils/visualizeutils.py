@@ -29,22 +29,24 @@ def change_color_brightness(color: Tuple, brightness_factor: float):
     assert brightness_factor >= -1.0 and brightness_factor <= 1.0
     color = mplc.to_rgb(color)
     polygon_color = colorsys.rgb_to_hls(*mplc.to_rgb(color))
-    modified_lightness = polygon_color[1] + (brightness_factor *
-                                             polygon_color[1])
+    modified_lightness = polygon_color[1] + (brightness_factor * polygon_color[1])
     modified_lightness = 0.0 if modified_lightness < 0.0 else modified_lightness
     modified_lightness = 1.0 if modified_lightness > 1.0 else modified_lightness
-    modified_color = colorsys.hls_to_rgb(polygon_color[0], modified_lightness,
-                                         polygon_color[2])
+    modified_color = colorsys.hls_to_rgb(
+        polygon_color[0], modified_lightness, polygon_color[2]
+    )
     return modified_color
 
 
-def draw_text(ax: plt.Axes,
-              text: str,
-              position: Tuple,
-              font_size: float,
-              color: str = "g",
-              horizontal_alignment: str = "center",
-              rotation: int = 0):
+def draw_text(
+    ax: plt.Axes,
+    text: str,
+    position: Tuple,
+    font_size: float,
+    color: str = "g",
+    horizontal_alignment: str = "center",
+    rotation: int = 0,
+):
     """
     Args:
         text (str): class label
@@ -69,12 +71,7 @@ def draw_text(ax: plt.Axes,
         text,
         size=font_size * 1,
         family="sans-serif",
-        bbox={
-            "facecolor": "black",
-            "alpha": 0.8,
-            "pad": 0.7,
-            "edgecolor": "none"
-        },
+        bbox={"facecolor": "black", "alpha": 0.8, "pad": 0.7, "edgecolor": "none"},
         verticalalignment="top",
         horizontalalignment=horizontal_alignment,
         color=color,
@@ -88,22 +85,24 @@ class BoxType(Enum):
     xywh = 2
 
 
-def draw_instances(img: Union[Image.Image, np.ndarray],
-                   boxes: Union[np.ndarray, List],
-                   labels: Union[np.ndarray, List],
-                   scores: Union[np.ndarray, List],
-                   masks: Union[np.ndarray, List],
-                   idx_class_dict: Dict[int, str],
-                   title: str = '',
-                   figsize: Tuple = (16, 8),
-                   show_boxes: bool = False,
-                   show_masks: bool = True,
-                   min_score: float = 0.5,
-                   min_area: int = 0,
-                   colors: List = None,
-                   ax: plt.Axes = None,
-                   box_type: BoxType = BoxType.xyxy,
-                   only_class_idxs: List[int] = None):
+def draw_instances(
+    img: Union[Image.Image, np.ndarray],
+    boxes: Union[np.ndarray, List],
+    labels: Union[np.ndarray, List],
+    scores: Union[np.ndarray, List],
+    masks: Union[np.ndarray, List],
+    idx_class_dict: Dict[int, str],
+    title: str = "",
+    figsize: Tuple = (16, 8),
+    show_boxes: bool = False,
+    show_masks: bool = True,
+    min_score: float = 0.5,
+    min_area: int = 0,
+    colors: List = None,
+    ax: plt.Axes = None,
+    box_type: BoxType = BoxType.xyxy,
+    only_class_idxs: List[int] = None,
+):
     """draw the instances from a object detector or an instance segmentation model
 
     Args:
@@ -129,24 +128,24 @@ def draw_instances(img: Union[Image.Image, np.ndarray],
 
     if boxes is not None and len(boxes) > 0 and len(np.array(boxes).shape) != 2:
         raise ValueError(
-            f'the shape of the boxes should be (N_BOXES, 4) while shape is {np.array(boxes).shape}'
+            f"the shape of the boxes should be (N_BOXES, 4) while shape is {np.array(boxes).shape}"
         )
 
     if masks is not None and len(masks) > 0 and len(np.array(masks).shape) < 3:
         raise ValueError(
-            f'the shape of the masks should be (N_MASKS, HEIGHT, WIDTH) while shape is {np.array(masks).shape}'
+            f"the shape of the masks should be (N_MASKS, HEIGHT, WIDTH) while shape is {np.array(masks).shape}"
         )
 
     labels_names = create_text_labels(labels, scores, idx_class_dict)
 
-    colors = generate_colormap(len(idx_class_dict) +
-                               1) if colors is None else colors
+    colors = generate_colormap(len(idx_class_dict) + 1) if colors is None else colors
 
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
 
-    only_class_idxs = list(
-        idx_class_dict.keys()) if only_class_idxs is None else only_class_idxs
+    only_class_idxs = (
+        list(idx_class_dict.keys()) if only_class_idxs is None else only_class_idxs
+    )
 
     if isinstance(img, Image.Image):
         width, height = img.width, img.height
@@ -155,7 +154,7 @@ def draw_instances(img: Union[Image.Image, np.ndarray],
 
     ax.set_ylim(height + 10, -10)
     ax.set_xlim(-10, width + 10)
-    ax.axis('off')
+    ax.axis("off")
     ax.set_title(title)
 
     out_image = np.array(img).astype(np.uint8)
@@ -187,14 +186,16 @@ def draw_instances(img: Union[Image.Image, np.ndarray],
             if area < min_area:
                 continue
 
-            p = Rectangle((x, y),
-                          w,
-                          h,
-                          linewidth=2,
-                          alpha=0.7,
-                          linestyle="dashed",
-                          edgecolor=color,
-                          facecolor='none')
+            p = Rectangle(
+                (x, y),
+                w,
+                h,
+                linewidth=2,
+                alpha=0.7,
+                linestyle="dashed",
+                edgecolor=color,
+                facecolor="none",
+            )
             ax.add_patch(p)
 
         # add the caption
@@ -209,21 +210,19 @@ def draw_instances(img: Union[Image.Image, np.ndarray],
 
         lighter_color = change_color_brightness(color, brightness_factor=0.7)
         font_size = 10
-        draw_text(ax, label_name, text_pos, font_size, lighter_color,
-                  horiz_align)
+        draw_text(ax, label_name, text_pos, font_size, lighter_color, horiz_align)
         if show_masks:
-            padded_mask = np.zeros((mask.shape[0] + 2, mask.shape[1] + 2),
-                                   dtype=np.float32)
+            padded_mask = np.zeros(
+                (mask.shape[0] + 2, mask.shape[1] + 2), dtype=np.float32
+            )
             padded_mask[1:-1, 1:-1] = mask
             contours = measure.find_contours(padded_mask, 0.5)
             for verts in contours:
                 # Subtract the padding and flip (y, x) to (x, y)
                 verts = np.fliplr(verts) - 1
-                p = Polygon(verts,
-                            facecolor=color,
-                            edgecolor=color,
-                            fill=True,
-                            alpha=.5)
+                p = Polygon(
+                    verts, facecolor=color, edgecolor=color, fill=True, alpha=0.5
+                )
                 ax.add_patch(p)
     ax.imshow(out_image)
     return ax
@@ -231,19 +230,18 @@ def draw_instances(img: Union[Image.Image, np.ndarray],
 
 def generate_colormap(nelems: int, scaled: bool = False, bright: bool = True):
     # Generate colors for drawing bounding boxes.
-    brightness = 1. if bright else .7
-    hsv_tuples = [(x / nelems, 1., brightness) for x in range(nelems)]
+    brightness = 1.0 if bright else 0.7
+    hsv_tuples = [(x / nelems, 1.0, brightness) for x in range(nelems)]
     colors = [colorsys.hsv_to_rgb(*x) for x in hsv_tuples]
     if scaled:
-        colors = [
-            (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)) for x in colors
-        ]
+        colors = [(int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)) for x in colors]
     random.shuffle(colors)
     return colors
 
 
-def create_text_labels(classes: List[int], scores: List[float],
-                       idx_class_dict: Dict[int, str]):
+def create_text_labels(
+    classes: List[int], scores: List[float], idx_class_dict: Dict[int, str]
+):
     """
     Args:
         classes (list[int] or None):
@@ -254,8 +252,7 @@ def create_text_labels(classes: List[int], scores: List[float],
     """
     labels = [idx_class_dict[i] for i in classes]
     labels = [
-        "{} {:.0f}%".format(label, score * 100)
-        for label, score in zip(labels, scores)
+        "{} {:.0f}%".format(label, score * 100) for label, score in zip(labels, scores)
     ]
     return labels
 
@@ -288,14 +285,14 @@ def create_text_labels(classes: List[int], scores: List[float],
 
 
 def draw_segmentation(
-        img: Union[np.ndarray, Image.Image],
-        logits_or_mask: np.ndarray,
-        idx_name_dict: Dict[int, str],
-        min_conf: float,
-        colors: List = None,
-        title: str = '',
-        ax: plt.Axes = None,
-        figsize: Tuple[int, int] = (16, 8),
+    img: Union[np.ndarray, Image.Image],
+    logits_or_mask: np.ndarray,
+    idx_name_dict: Dict[int, str],
+    min_conf: float,
+    colors: List = None,
+    title: str = "",
+    ax: plt.Axes = None,
+    figsize: Tuple[int, int] = (16, 8),
 ):
     """draw the result from a segmentation model
 
@@ -304,7 +301,7 @@ def draw_segmentation(
         logits_or_mask (np.ndarray): it accepts:
             - the logits coming from the model with shape (n_classes, H, W), or
             - the mask coming from true annotations with shape (H,W) and containing pixel classification
-        idx_name_dict (Dict[int, str]): 
+        idx_name_dict (Dict[int, str]):
         min_conf (float): the min confidence of the mask given as output
         colors (List, optional): the colors to diplay categories. Defaults to None.
         title (str, optional): [description]. Defaults to ''.
@@ -312,7 +309,7 @@ def draw_segmentation(
         figsize (Tuple[int, int], optional): [description]. Defaults to (16, 8).
 
     Returns:
-        [plt.Axes]: the ax of the given plot 
+        [plt.Axes]: the ax of the given plot
     """
     if colors is None:
         colors = generate_colormap(len(idx_name_dict) + 1)
@@ -326,7 +323,7 @@ def draw_segmentation(
     width, height = img.size
     ax.set_ylim(height + 10, -10)
     ax.set_xlim(-10, width + 10)
-    ax.axis('off')
+    ax.axis("off")
     ax.set_title(title)
 
     out_image = np.array(img).astype(np.uint8)
@@ -343,11 +340,11 @@ def draw_segmentation(
         conf = np.round(np.nan_to_num(probs[cat, mask].mean()), 2)
         if conf < min_conf:
             continue
-        #remove all the pixels with score lower
+        # remove all the pixels with score lower
         filt_mask = np.copy(mask)
         filt_mask[probs[cat, ...] < min_conf] = 0
 
-        name = f'{idx_name_dict[cat]} {int(conf * 100)}%'
+        name = f"{idx_name_dict[cat]} {int(conf * 100)}%"
         color = colors[cat]
 
         # draw text in the center (defined by median) when box is not drawn
@@ -357,10 +354,11 @@ def draw_segmentation(
 
         lighter_color = change_color_brightness(color, brightness_factor=0.7)
         font_size = 10
-        draw_text(ax, name, text_pos, font_size, horizontal_alignment='left')
+        draw_text(ax, name, text_pos, font_size, horizontal_alignment="left")
 
-        padded_mask = np.zeros((filt_mask.shape[0] + 2, filt_mask.shape[1] + 2),
-                               dtype=np.uint8)
+        padded_mask = np.zeros(
+            (filt_mask.shape[0] + 2, filt_mask.shape[1] + 2), dtype=np.uint8
+        )
         padded_mask[1:-1, 1:-1] = filt_mask
         contours = measure.find_contours(padded_mask, 0.5)
         for verts in contours:
@@ -368,9 +366,10 @@ def draw_segmentation(
             p = Polygon(
                 verts,
                 facecolor=color,
-                edgecolor=lighter_color,    # 'black',
+                edgecolor=lighter_color,  # 'black',
                 fill=True,
-                alpha=.5)
+                alpha=0.5,
+            )
             ax.add_patch(p)
     ax.imshow(out_image)
     return ax
