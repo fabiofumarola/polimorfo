@@ -1,9 +1,9 @@
 import copy
 import json
 import logging
+import shutil
 from collections import defaultdict
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import DefaultDict, Dict, List, Set, Tuple, Union
 
@@ -11,7 +11,6 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 from deprecated import deprecated
-from numpy.lib.utils import deprecate
 from PIL import Image
 from tqdm import tqdm
 
@@ -19,35 +18,28 @@ from ..utils import maskutils, visualizeutils
 
 log = logging.getLogger(__name__)
 
-__all__ = ['CocoDataset']
+__all__ = ["CocoDataset"]
 
 
-class CocoDataset():
+class CocoDataset:
     """Process the dataset in COCO format
-        Data Format
-        ---------
-        annotation{
-            "id": int, 
-            "image_id": int, 
-            "category_id": int, 
-            "segmentation": RLE or [polygon], 
-            "area": float, 
-            "bbox": [x,y,width,height],
-            "iscrowd": 0 or 1,
-        }
-        categories[{
-        "id": int, "name": str, "supercategory": str,
-        }]
+    Data Format
+    ---------
+    annotation{
+        "id": int,
+        "image_id": int,
+        "category_id": int,
+        "segmentation": RLE or [polygon],
+        "area": float,
+        "bbox": [x,y,width,height],
+        "iscrowd": 0 or 1,
+    }
+    categories[{
+    "id": int, "name": str, "supercategory": str,
+    }]
     """
 
-    class ExportFormat(Enum):
-        coco = 1
-        segmentation = 2
-
-    def __init__(self,
-                 coco_path: str,
-                 image_path: str = None,
-                 verbose: bool = True):
+    def __init__(self, coco_path: str, image_path: str = None, verbose: bool = True):
         """Load a dataset from a coco .json dataset
         Arguments:
                         annotations_path {Path} -- Path to coco dataset
@@ -67,10 +59,10 @@ class CocoDataset():
 
         self.info = {
             "year": datetime.now().year,
-            "version": '1',
-            "description": 'dataset create with polimorfo',
-            "contributor": '',
-            "url": '',
+            "version": "1",
+            "description": "dataset create with polimorfo",
+            "contributor": "",
+            "url": "",
             "date_created": datetime.now().date().isoformat(),
         }
 
@@ -79,7 +71,7 @@ class CocoDataset():
         self.coco_path = Path(coco_path)
 
         if image_path is None:
-            self.__image_folder = self.coco_path.parent / 'images'
+            self.__image_folder = self.coco_path.parent / "images"
         else:
             self.__image_folder = Path(image_path)
 
@@ -87,34 +79,38 @@ class CocoDataset():
             with self.coco_path.open() as f:
                 data = json.load(f)
             assert set(data) == {
-                'annotations', 'categories', 'images', 'info', 'licenses'
-            }, 'Not correct file format'
+                "annotations",
+                "categories",
+                "images",
+                "info",
+                "licenses",
+            }, "Not correct file format"
 
-            self.info = data['info']
-            self.licenses = data['licenses']
+            self.info = data["info"]
+            self.licenses = data["licenses"]
 
-            for cat_meta in tqdm(data['categories'],
-                                 desc='load categories',
-                                 disable=not verbose):
-                if cat_meta['id'] > self.cat_id:
-                    self.cat_id = cat_meta['id']
-                self.cats[cat_meta['id']] = cat_meta
+            for cat_meta in tqdm(
+                data["categories"], desc="load categories", disable=not verbose
+            ):
+                if cat_meta["id"] > self.cat_id:
+                    self.cat_id = cat_meta["id"]
+                self.cats[cat_meta["id"]] = cat_meta
             self.cat_id += 1
 
-            for img_meta in tqdm(data['images'],
-                                 desc='load images',
-                                 disable=not verbose):
-                if img_meta['id'] > self.img_id:
-                    self.img_id = img_meta['id']
-                self.imgs[img_meta['id']] = img_meta
+            for img_meta in tqdm(
+                data["images"], desc="load images", disable=not verbose
+            ):
+                if img_meta["id"] > self.img_id:
+                    self.img_id = img_meta["id"]
+                self.imgs[img_meta["id"]] = img_meta
             self.img_id += 1
 
-            for ann_meta in tqdm(data['annotations'],
-                                 desc='load annotations',
-                                 disable=not verbose):
-                if ann_meta['id'] > self.ann_id:
-                    self.ann_id = ann_meta['id']
-                self.anns[ann_meta['id']] = ann_meta
+            for ann_meta in tqdm(
+                data["annotations"], desc="load annotations", disable=not verbose
+            ):
+                if ann_meta["id"] > self.ann_id:
+                    self.ann_id = ann_meta["id"]
+                self.anns[ann_meta["id"]] = ann_meta
             self.ann_id += 1
 
             self.index = Index(self)
@@ -124,8 +120,7 @@ class CocoDataset():
         return self.__image_folder
 
     def copy(self):
-        new_coco = CocoDataset('fake.json',
-                               image_path=self.__image_folder.as_posix())
+        new_coco = CocoDataset("fake.json", image_path=self.__image_folder.as_posix())
         new_coco.cats = copy.deepcopy(self.cats)
         new_coco.imgs = copy.deepcopy(self.imgs)
         new_coco.anns = copy.deepcopy(self.anns)
@@ -139,14 +134,13 @@ class CocoDataset():
         return new_coco
 
     def reindex(self, by_image_name=True):
-        """reindex images and annotations to be zero based and categories one based
-        """
+        """reindex images and annotations to be zero based and categories one based"""
         old_new_catidx = dict()
         new_cats = dict()
         for new_idx, (old_idx, cat_meta) in enumerate(self.cats.items(), 1):
             old_new_catidx[old_idx] = new_idx
             cat_meta = cat_meta.copy()
-            cat_meta['id'] = new_idx
+            cat_meta["id"] = new_idx
             new_cats[new_idx] = cat_meta
             self.cat_id = new_idx
         self.cat_id += 1
@@ -154,28 +148,30 @@ class CocoDataset():
         old_new_imgidx = dict()
         new_imgs = dict()
         if by_image_name:
-            sorted_imgs_items = sorted(self.imgs.items(),
-                                       key=lambda x: x[1]['file_name'])
+            sorted_imgs_items = sorted(
+                self.imgs.items(), key=lambda x: x[1]["file_name"]
+            )
         else:
             sorted_imgs_items = self.imgs.items()
 
-        for new_idx, (old_idx, img_meta) in tqdm(enumerate(sorted_imgs_items),
-                                                 'reindex images',
-                                                 disable=not self.verbose):
+        for new_idx, (old_idx, img_meta) in tqdm(
+            enumerate(sorted_imgs_items), "reindex images", disable=not self.verbose
+        ):
             old_new_imgidx[old_idx] = new_idx
             img_meta = img_meta.copy()
-            img_meta['id'] = new_idx
+            img_meta["id"] = new_idx
             new_imgs[new_idx] = img_meta
             self.img_id = new_idx
         self.img_id += 1
 
         new_anns = dict()
-        for new_idx, (old_idx, ann_meta) in tqdm(enumerate(self.anns.items()),
-                                                 'reindex annotations'):
+        for new_idx, (old_idx, ann_meta) in tqdm(
+            enumerate(self.anns.items()), "reindex annotations"
+        ):
             ann_meta = ann_meta.copy()
-            ann_meta['id'] = new_idx
-            ann_meta['category_id'] = old_new_catidx[ann_meta['category_id']]
-            ann_meta['image_id'] = old_new_imgidx[ann_meta['image_id']]
+            ann_meta["id"] = new_idx
+            ann_meta["category_id"] = old_new_catidx[ann_meta["category_id"]]
+            ann_meta["image_id"] = old_new_imgidx[ann_meta["image_id"]]
             new_anns[new_idx] = ann_meta
             self.ann_id = new_idx
         self.ann_id += 1
@@ -197,11 +193,9 @@ class CocoDataset():
         """
 
         for img_meta in tqdm(self.imgs.values(), disable=not self.verbose):
-            img_meta['file_name'] = func(img_meta['file_name'])
+            img_meta["file_name"] = func(img_meta["file_name"])
 
-    def get_annotations(self,
-                        img_idx: int,
-                        category_idxs: List[int] = None) -> List:
+    def get_annotations(self, img_idx: int, category_idxs: List[int] = None) -> List:
         """returns the annotations of the given image
 
         Args:
@@ -221,18 +215,17 @@ class CocoDataset():
         annotations = []
         for idx in anns_idx:
             ann = self.anns[idx]
-            if ann['category_id'] in category_idxs:
+            if ann["category_id"] in category_idxs:
                 annotations.append(ann)
 
         return annotations
 
     def compute_area(self) -> None:
-        """compute the area of the annotations
-        """
-        for ann in tqdm(self.anns.values(),
-                        desc='process images',
-                        disable=not self.verbose):
-            ann['area'] = ann['bbox'][2] * ann['bbox'][3]
+        """compute the area of the annotations"""
+        for ann in tqdm(
+            self.anns.values(), desc="process images", disable=not self.verbose
+        ):
+            ann["area"] = ann["bbox"][2] * ann["bbox"][3]
 
     def __len__(self):
         """the number of the images in the dataset
@@ -242,7 +235,7 @@ class CocoDataset():
         return len(self.imgs)
 
     def merge_categories(self, cat_to_merge: List[str], new_cat: str) -> None:
-        """ Merge two or more categories labels to a new single category.
+        """Merge two or more categories labels to a new single category.
             Remove from __content the category to be merged and update
             annotations cat_ids and reindex data with update content.
 
@@ -251,13 +244,14 @@ class CocoDataset():
             new_cat (str): new label to assign to the merged categories
         """
         catidx_to_merge = [
-            idx for idx, cat_meta in self.cats.items()
-            if cat_meta['name'] in cat_to_merge
+            idx
+            for idx, cat_meta in self.cats.items()
+            if cat_meta["name"] in cat_to_merge
         ]
         self.merge_category_ids(catidx_to_merge, new_cat)
 
     def merge_category_ids(self, cat_to_merge: List[int], new_cat: str) -> None:
-        """ Merge two or more categories labels to a new single category.
+        """Merge two or more categories labels to a new single category.
             Remove from __content the category to be merged and update
             annotations cat_ids and reindex data with update content.
 
@@ -268,27 +262,23 @@ class CocoDataset():
         new_cat_idx = max(self.cats.keys()) + 1
 
         self.cats = {
-            idx: cat
-            for idx, cat in self.cats.items()
-            if idx not in cat_to_merge
+            idx: cat for idx, cat in self.cats.items() if idx not in cat_to_merge
         }
         self.cats[new_cat_idx] = {
             "supercategory": "thing",
             "id": new_cat_idx,
-            "name": new_cat
+            "name": new_cat,
         }
 
-        for ann_meta in tqdm(self.anns.values(),
-                             'process annotations',
-                             disable=not self.verbose):
-            if ann_meta['category_id'] in cat_to_merge:
-                ann_meta['category_id'] = new_cat_idx
+        for ann_meta in tqdm(
+            self.anns.values(), "process annotations", disable=not self.verbose
+        ):
+            if ann_meta["category_id"] in cat_to_merge:
+                ann_meta["category_id"] = new_cat_idx
 
         self.reindex()
 
-    def remove_categories(self,
-                          idxs: List[int],
-                          remove_images: bool = False) -> None:
+    def remove_categories(self, idxs: List[int], remove_images: bool = False) -> None:
         """Remove the categories with the relative annotations
 
         Args:
@@ -298,11 +288,11 @@ class CocoDataset():
             if cat_idx not in self.cats:
                 continue
 
-            for idx in tqdm(list(self.anns),
-                            'process annotations',
-                            disable=not self.verbose):
+            for idx in tqdm(
+                list(self.anns), "process annotations", disable=not self.verbose
+            ):
                 ann_meta = self.anns[idx]
-                if ann_meta['category_id'] == cat_idx:
+                if ann_meta["category_id"] == cat_idx:
                     del self.anns[idx]
 
             del self.cats[cat_idx]
@@ -312,9 +302,7 @@ class CocoDataset():
         self.reindex()
 
     def remove_images_without_annotations(self):
-        idx_images_with_annotations = {
-            ann['image_id'] for ann in self.anns.values()
-        }
+        idx_images_with_annotations = {ann["image_id"] for ann in self.anns.values()}
 
         idx_to_remove = set(self.imgs.keys()) - idx_images_with_annotations
         for idx in idx_to_remove:
@@ -322,26 +310,21 @@ class CocoDataset():
         self.reindex()
 
     def cleanup_missing_images(self):
-        """remove the images missing from images folder
-        """
+        """remove the images missing from images folder"""
         to_remove_idx = []
         for idx in self.imgs:
             img_meta = self.imgs[idx]
-            path = self.__image_folder / img_meta['file_name']
+            path = self.__image_folder / img_meta["file_name"]
             if not path.exists():
                 # There could be paths that have whitespaces renamed (under windows)
-                alternative_path = self.__image_folder / img_meta[
-                    'file_name'].replace(" ", "_")
+                alternative_path = self.__image_folder / img_meta["file_name"].replace(
+                    " ", "_"
+                )
                 if not alternative_path.exists():
                     del self.imgs[idx]
                     to_remove_idx.append(idx)
 
-        print('removed %d images' % (len(to_remove_idx)))
-
-    @deprecated(version='0.9.21',
-                reason='you should use count_images_per_category')
-    def cats_images_count(self):
-        return self.count_images_per_category()
+        print("removed %d images" % (len(to_remove_idx)))
 
     def count_images_per_category(self):
         """get the number of images per category
@@ -352,14 +335,9 @@ class CocoDataset():
             self.reindex()
 
         return {
-            self.cats[cat_id]['name']: len(set(imgs_list))
+            self.cats[cat_id]["name"]: len(set(imgs_list))
             for cat_id, imgs_list in self.index.catidx_to_imgidxs.items()
         }
-
-    @deprecated(version='0.9.21',
-                reason='you should use count_annotations_per_category')
-    def cats_annotations_count(self):
-        return self.count_annotations_per_category()
 
     def count_annotations_per_category(self):
         """the number of annotations per category
@@ -370,7 +348,7 @@ class CocoDataset():
             self.reindex()
 
         return {
-            self.cats[cat_id]['name']: len(set(anns_list))
+            self.cats[cat_id]["name"]: len(set(anns_list))
             for cat_id, anns_list in self.index.catidx_to_annidxs.items()
         }
 
@@ -382,15 +360,13 @@ class CocoDataset():
         filtered_cat_ids = set(ids)
 
         self.cats = {
-            idx: cat
-            for idx, cat in self.cats.items()
-            if idx in filtered_cat_ids
+            idx: cat for idx, cat in self.cats.items() if idx in filtered_cat_ids
         }
 
         self.anns = {
             idx: ann_meta
             for idx, ann_meta in self.anns.items()
-            if ann_meta['category_id'] in filtered_cat_ids
+            if ann_meta["category_id"] in filtered_cat_ids
         }
 
         if remove_images:
@@ -413,25 +389,24 @@ class CocoDataset():
         self.anns = {
             idx: ann_meta
             for idx, ann_meta in self.anns.items()
-            if ann_meta['image_id'] not in set_image_idxs
+            if ann_meta["image_id"] not in set_image_idxs
         }
 
         catnames_to_remove = {
-            cat_name for cat_name, count in
-            self.count_annotations_per_category().items() if count == 0
+            cat_name
+            for cat_name, count in self.count_annotations_per_category().items()
+            if count == 0
         }
 
         self.cats = {
             idx: cat_meta
             for idx, cat_meta in self.cats.items()
-            if cat_meta['name'] not in catnames_to_remove
+            if cat_meta["name"] not in catnames_to_remove
         }
 
         self.reindex()
 
-    def remove_annotations(self,
-                           ids: List[int],
-                           remove_images: bool = False) -> None:
+    def remove_annotations(self, ids: List[int], remove_images: bool = False) -> None:
         """Remove from the dataset all the annotations ids passes as parameter
 
         Arguments:
@@ -439,9 +414,7 @@ class CocoDataset():
                 image id annotations ids to remove
         """
         set_ids = set(ids)
-        self.anns = {
-            idx: ann for idx, ann in self.anns.items() if idx not in set_ids
-        }
+        self.anns = {idx: ann for idx, ann in self.anns.items() if idx not in set_ids}
 
         # remove the images with no annotations
         if remove_images:
@@ -454,20 +427,18 @@ class CocoDataset():
             object -- an object with the dumped annotations
         """
         return {
-            'info': self.info,
-            'licenses': self.licenses,
-            'images': list(self.imgs.values()),
-            'categories': list(self.cats.values()),
-            'annotations': list(self.anns.values()),
+            "info": self.info,
+            "licenses": self.licenses,
+            "images": list(self.imgs.values()),
+            "categories": list(self.cats.values()),
+            "annotations": list(self.anns.values()),
         }
 
-    def dump(self, path=None, exp_format: ExportFormat = ExportFormat.coco):
+    def dump(self, path=None, **kvargs):
         """dump the dataset annotations and the images to the given path
 
         Args:
             path ([type]): the path to save the json and the images
-            exp_format (ExportFormat, optional): [the supported format].
-                 Defaults to ExportFormat.coco.
 
         Raises:
             ValueError: [description]
@@ -477,48 +448,100 @@ class CocoDataset():
         else:
             path = Path(path)
 
-        if exp_format.value == self.ExportFormat.coco.value:
-            with open(path, 'w') as fp:
-                json.dump(self.dumps(), fp)
-        elif exp_format.value is self.ExportFormat.segmentation.value:
-            # create a segmentation folder
-            if path is not None:
-                segments_path = path
-            else:
-                segments_path = self.__image_folder.parent / 'segments'
-            segments_path.mkdir(exist_ok=True, parents=True)
-
-            # save a png of the masks
-            for img_idx, img_meta in tqdm(
-                    self.imgs.items(),
-                    f'savig masks in {segments_path.as_posix()}',
-                    disable=not self.verbose):
-                name = '.'.join(
-                    Path(img_meta['file_name']).name.split('.')[:-1])
-                segm_path = segments_path / (name + '.png')
-                segm_img = self.get_segmentation_mask(img_idx)
-                segm_img.save(segm_path)
-        else:
-            raise ValueError('export format not valid')
+        with open(path, "w") as fp:
+            json.dump(self.dumps(), fp)
 
     def save_idx_class_dict(self, path: Union[str, Path] = None) -> Path:
+        """save the idx class dict for the dataset
+
+        Args:
+            path (Union[str, Path], optional): [description]. Defaults to None.
+
+        Returns:
+            Path: [description]
+        """
         if path is None:
-            path = self.images_path.parent / 'idx_class_dict.json'
+            path = self.images_path.parent / "idx_class_dict.json"
 
         idx_class_dict = {
-            str(idx): cat_meta['name'] for idx, cat_meta in self.cats.items()
+            str(idx): cat_meta["name"] for idx, cat_meta in self.cats.items()
         }
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(idx_class_dict, f)
 
         return path
 
-    def save_segmentation_masks(self,
-                                path: Union[str, Path] = None,
-                                cats_idx: List[int] = None,
-                                remapping_dict: Dict[int, int] = None,
-                                min_conf: float = .5,
-                                ignore_index: int = 255) -> None:
+    def save_images_and_masks(
+        self,
+        path: Union[str, Path],
+        cats_idx: List[int] = None,
+        remapping_dict: Dict[int, int] = None,
+        min_conf: float = 0.5,
+        ignore_index: int = 255,
+        min_num_annotations: int = None,
+    ) -> Tuple[Path, Path]:
+        """Save images and segmentation mask into folders:
+            * segments
+            * images
+            children of the specified path
+
+        Args:
+            path (Union[str, Path], optional): the path to save the masks. Defaults to None.
+            cats_idx (List[int], optional): [an optional filter over the classes]. Defaults to None.
+            remapping_dict (Dict[int, int], optional): a remapping dictionary for the index to save. Defaults to None.
+            min_conf (float): the min confidence to generate the segment, segments with conf below the threshold are replaced as 255
+            ignore_index (int): the value used to replace segments with confidence below min_conf
+            min_num_annotations (int, optional): [description]. Defaults to None.
+        """
+        path = Path(path)
+        path.mkdir(exist_ok=True, parents=True)
+        images_path = path / "images"
+        images_path.mkdir(exist_ok=True, parents=True)
+        segments_path = path / "segments"
+        segments_path.mkdir(exist_ok=True, parents=True)
+
+        for img_idx, img_meta in tqdm(
+            self.imgs.items(),
+            f"saving masks in {path.as_posix()}",
+            disable=not self.verbose,
+        ):
+            # skip images and mask with less than min_num_annotations
+            if (min_num_annotations != None) and (
+                len(self.get_annotations(img_idx)) < min_num_annotations
+            ):
+                continue
+
+            src_img_path = self.__image_folder / img_meta["file_name"]
+            dst_imag_path = images_path / img_meta["file_name"]
+            if src_img_path.exists():
+                shutil.copy(src_img_path, dst_imag_path)
+
+            name = ".".join(Path(img_meta["file_name"]).name.split(".")[:-1])
+            segm_path = segments_path / (name + ".png")
+            if segm_path.exists():
+                continue
+            segm_img = self.get_segmentation_mask(
+                img_idx, cats_idx, remapping_dict, min_conf, ignore_index
+            )
+            segm_img.save(segm_path)
+
+        cat_idx_dict = dict()
+        for idx, cat in self.cats.items():
+            cat_idx_dict[cat["name"]] = idx
+
+        with open(path / "cat_idx_dict.json", "w") as f:
+            json.dump(cat_idx_dict, f)
+
+        return images_path, segments_path
+
+    def save_segmentation_masks(
+        self,
+        path: Union[str, Path] = None,
+        cats_idx: List[int] = None,
+        remapping_dict: Dict[int, int] = None,
+        min_conf: float = 0.5,
+        ignore_index: int = 255,
+    ) -> None:
         """save the segmentation mask for the given dataset
 
         Args:
@@ -529,29 +552,58 @@ class CocoDataset():
             ignore_index (int): the value used to replace segments with confidence below min_conf
         """
         if path is None:
-            path = self.__image_folder.parent / 'segments'
+            path = self.__image_folder.parent / "segments"
         else:
             path = Path(path)
         path.mkdir(exist_ok=True, parents=True)
 
-        for img_idx, img_meta in tqdm(self.imgs.items(),
-                                      f'saving masks in {path.as_posix()}',
-                                      disable=not self.verbose):
-            name = '.'.join(Path(img_meta['file_name']).name.split('.')[:-1])
-            segm_path = path / (name + '.png')
+        for img_idx, img_meta in tqdm(
+            self.imgs.items(),
+            f"saving masks in {path.as_posix()}",
+            disable=not self.verbose,
+        ):
+            name = ".".join(Path(img_meta["file_name"]).name.split(".")[:-1])
+            segm_path = path / (name + ".png")
             if segm_path.exists():
                 continue
-            segm_img = self.get_segmentation_mask(img_idx, cats_idx,
-                                                  remapping_dict, min_conf,
-                                                  ignore_index)
+            segm_img = self.get_segmentation_mask(
+                img_idx, cats_idx, remapping_dict, min_conf, ignore_index
+            )
             segm_img.save(segm_path)
 
-    def get_segmentation_mask(self,
-                              img_idx: int,
-                              cats_idx: List[int] = None,
-                              remapping_dict: Dict[int, int] = None,
-                              min_conf: float = .5,
-                              ignore_index: int = 255):
+        cat_idx_dict = dict()
+        for idx, cat in self.cats.items():
+            cat_idx_dict[cat["name"]] = idx
+
+        with open(path.parent / "cat_idx_dict.json", "w") as f:
+            json.dump(cat_idx_dict, f)
+
+    def remap_categories(self, remapping_dict: Dict[int, int]) -> None:
+        for ann in tqdm(self.anns.values(), desc="renaming category idxs"):
+            if ann["category_id"] in remapping_dict:
+                ann["category_id"] = remapping_dict[ann["category_id"]]
+
+        cats = dict()
+        for idx, cat in self.cats.items():
+            if idx in remapping_dict:
+                new_idx = remapping_dict[idx]
+            else:
+                new_idx = idx
+            cat["id"] = new_idx
+            cats[new_idx] = cat
+
+        self.cats = cats
+        self.cats = dict(sorted(self.cats.items(), key=lambda x: x[0]))
+        self.index = Index(self)
+
+    def get_segmentation_mask(
+        self,
+        img_idx: int,
+        cats_idx: List[int] = None,
+        remapping_dict: Dict[int, int] = None,
+        min_conf: float = 0.5,
+        ignore_index: int = 255,
+    ):
         """generate a mask for the given image idx
 
         Args:
@@ -565,34 +617,35 @@ class CocoDataset():
             [type]: [description]
         """
         img_meta = self.imgs[img_idx]
-        height, width = img_meta['height'], img_meta['width']
+        height, width = img_meta["height"], img_meta["width"]
         anns = self.get_annotations(img_idx, cats_idx)
         target_image = np.zeros((height, width), dtype=np.uint8)
 
-        segmentations = [obj['segmentation'] for obj in anns]
+        segmentations = [obj["segmentation"] for obj in anns]
         if len(segmentations):
             annotation_masks = maskutils.coco_poygons_to_mask(
-                segmentations, height, width)
+                segmentations, height, width
+            )
             elements = []
             for i, obj in enumerate(anns):
-                elements.append({
-                    'id': obj['category_id'],
-                    'area': obj['area'],
-                    'mask': annotation_masks[i],
-                    'score': obj['score'] if 'score' in obj else 1.
-                })
+                elements.append(
+                    {
+                        "id": obj["category_id"],
+                        "area": obj["area"],
+                        "mask": annotation_masks[i],
+                        "score": obj["score"] if "score" in obj else 1.0,
+                    }
+                )
             # order the mask by area
-            elements = sorted(elements, key=lambda x: x['area'], reverse=True)
+            elements = sorted(elements, key=lambda x: x["area"], reverse=True)
             for elem in elements:
-                if elem['score'] < min_conf:
-                    target_image[elem['mask'] == 1] = ignore_index
+                if elem["score"] < min_conf:
+                    target_image[elem["mask"] == 1] = ignore_index
                 else:
-                    if remapping_dict is not None and elem[
-                            'id'] in remapping_dict:
-                        target_image[elem['mask'] == 1] = remapping_dict[
-                            elem['id']]
+                    if remapping_dict is not None and elem["id"] in remapping_dict:
+                        target_image[elem["mask"] == 1] = remapping_dict[elem["id"]]
                     else:
-                        target_image[elem['mask'] == 1] = elem['id']
+                        target_image[elem["mask"] == 1] = elem["id"]
 
         target = Image.fromarray(target_image)
         return target
@@ -601,13 +654,13 @@ class CocoDataset():
         """load an image from the idx
 
         Args:
-            idx ([int]): the idx of the image 
+            idx ([int]): the idx of the image
 
         Returns:
             [Pillow.Image]: []
         """
 
-        path = self.__image_folder / self.imgs[idx]['file_name']
+        path = self.__image_folder / self.imgs[idx]["file_name"]
         return Image.open(path)
 
     def mean_pixels(self, sample: int = 1000) -> List[float]:
@@ -621,9 +674,9 @@ class CocoDataset():
         """
 
         channels = {
-            'red': 0,
-            'green': 0,
-            'blue': 0,
+            "red": 0,
+            "green": 0,
+            "blue": 0,
         }
         idxs = np.random.choice(list(self.imgs.keys()), sample)
 
@@ -635,8 +688,9 @@ class CocoDataset():
             del img
 
         return [
-            channels['red'] / sample, channels['green'] / sample,
-            channels['blue'] / sample
+            channels["red"] / sample,
+            channels["green"] / sample,
+            channels["blue"] / sample,
         ]
 
     def add_category(self, name: str, supercategory: str) -> int:
@@ -650,15 +704,16 @@ class CocoDataset():
             int: cat id
         """
         self.cats[self.cat_id] = {
-            'id': self.cat_id,
-            'name': name,
-            'supercategory': supercategory
+            "id": self.cat_id,
+            "name": name,
+            "supercategory": supercategory,
         }
         self.cat_id += 1
         return self.cat_id - 1
 
-    def add_image(self, file_name: Union[str, Path], height: int, width: int,
-                  **kwargs) -> int:
+    def add_image(
+        self, file_name: Union[str, Path], height: int, width: int, **kwargs
+    ) -> int:
         """Add a new image to the dataset .
 
         Args:
@@ -673,25 +728,27 @@ class CocoDataset():
             file_name = file_name.as_posix()
 
         self.imgs[self.img_id] = {
-            'id': self.img_id,
-            'width': width,
-            'height': height,
-            'file_name': file_name,
-            'flickr_url': '',
-            'coco_url': '',
-            'data_captured': datetime.now().date().isoformat()
+            "id": self.img_id,
+            "width": width,
+            "height": height,
+            "file_name": file_name,
+            "flickr_url": "",
+            "coco_url": "",
+            "data_captured": datetime.now().date().isoformat(),
         }
         self.img_id += 1
         return self.img_id - 1
 
-    def add_annotation(self,
-                       img_id: int,
-                       cat_id: int,
-                       segmentation: List[List[int]],
-                       area: float,
-                       bbox: List,
-                       is_crowd: int,
-                       score: float = None) -> int:
+    def add_annotation(
+        self,
+        img_id: int,
+        cat_id: int,
+        segmentation: List[List[int]],
+        area: float,
+        bbox: List,
+        is_crowd: int,
+        score: float = None,
+    ) -> int:
         """add a new annotation to the dataset
 
         Args:
@@ -710,23 +767,24 @@ class CocoDataset():
         assert cat_id in self.cats
 
         metadata = {
-            'id': self.ann_id,
-            'image_id': img_id,
-            'category_id': cat_id,
-            'segmentation': segmentation,
-            'area': area,
-            'bbox': bbox,
-            'iscrowd': is_crowd,
+            "id": self.ann_id,
+            "image_id": img_id,
+            "category_id": cat_id,
+            "segmentation": segmentation,
+            "area": area,
+            "bbox": bbox,
+            "iscrowd": is_crowd,
         }
         if score:
-            metadata['score'] = score
+            metadata["score"] = score
 
         self.anns[self.ann_id] = metadata
         self.ann_id += 1
         return self.ann_id - 1
 
-    def crop_image(self, img_idx: int, bbox: Tuple[float, float, float, float],
-                   dst_path: Path) -> str:
+    def crop_image(
+        self, img_idx: int, bbox: Tuple[float, float, float, float], dst_path: Path
+    ) -> str:
         """crop the image id with respect the given bounding box to the specified path
 
         Args:
@@ -741,8 +799,8 @@ class CocoDataset():
         img_meta = self.imgs[img_idx]
         img = self.load_image(img_idx)
         img_cropped = img.crop(bbox)
-        img_cropped.save(dst_path / img_meta['file_name'])
-        return img_meta['file_name']
+        img_cropped.save(dst_path / img_meta["file_name"])
+        return img_meta["file_name"]
 
     def enlarge_box(self, bbox, height, width, pxls=10):
         """enlarge a given box of pxls pixels
@@ -763,8 +821,9 @@ class CocoDataset():
         bbox[3] = np.clip(bbox[3] + pxls, 0, height)
         return bbox
 
-    def move_annotation(self, idx: int, bbox: Tuple[float, float, float,
-                                                    float]) -> Dict:
+    def move_annotation(
+        self, idx: int, bbox: Tuple[float, float, float, float]
+    ) -> Dict:
         """move the bounding box and the segments of the annotation with respect to given bounding box
 
         Args:
@@ -776,20 +835,20 @@ class CocoDataset():
         """
 
         ann_meta = self.anns[idx]
-        img_meta = self.imgs[ann_meta['image_id']]
-        img_bbox = np.array([0, 0, img_meta['width'], img_meta['height']])
+        img_meta = self.imgs[ann_meta["image_id"]]
+        img_bbox = np.array([0, 0, img_meta["width"], img_meta["height"]])
 
         # compute the shift for x and y
         diff_bbox = img_bbox - np.array(bbox)
         move_width, move_height = diff_bbox[:2]
 
         # move bbox
-        bbox_moved = copy.deepcopy(ann_meta['bbox'])
+        bbox_moved = copy.deepcopy(ann_meta["bbox"])
         bbox_moved[0] += move_width
         bbox_moved[1] += move_height
 
         # move segmentations
-        segmentations_moved = copy.deepcopy(ann_meta['segmentation'])
+        segmentations_moved = copy.deepcopy(ann_meta["segmentation"])
         for segmentation in segmentations_moved:
             for i in range(len(segmentation)):
                 if i % 2 == 0:
@@ -798,10 +857,10 @@ class CocoDataset():
                     segmentation[i] += move_height
 
         ann_meta_moved = {
-            'iscrowd': ann_meta['iscrowd'],
-            'bbox': bbox_moved,
-            'area': ann_meta['area'],
-            'segmentation': segmentations_moved
+            "iscrowd": ann_meta["iscrowd"],
+            "bbox": bbox_moved,
+            "area": ann_meta["area"],
+            "segmentation": segmentations_moved,
         }
 
         return ann_meta_moved
@@ -812,19 +871,21 @@ class CocoDataset():
 
         return [self.anns[idx] for idx in ann_idxs]
 
-    def show_image(self,
-                   img_idx: int = None,
-                   img_name: str = None,
-                   anns_idx: List[int] = None,
-                   ax=None,
-                   title: str = None,
-                   figsize=(18, 6),
-                   colors=None,
-                   show_boxes=False,
-                   show_masks=True,
-                   min_score=0.5,
-                   min_area: int = 0,
-                   cats_idx: List[int] = None) -> plt.Axes:
+    def show_image(
+        self,
+        img_idx: int = None,
+        img_name: str = None,
+        anns_idx: List[int] = None,
+        ax=None,
+        title: str = None,
+        figsize=(18, 6),
+        colors=None,
+        show_boxes=False,
+        show_masks=True,
+        min_score=0.5,
+        min_area: int = 0,
+        cats_idx: List[int] = None,
+    ) -> plt.Axes:
         """show an image with its annotations
 
         Args:
@@ -849,36 +910,38 @@ class CocoDataset():
 
         if img_name is not None:
             values = [
-                idx for idx, img_meta in self.imgs.items()
-                if img_meta['file_name'] == img_name
+                idx
+                for idx, img_meta in self.imgs.items()
+                if img_meta["file_name"] == img_name
             ]
             img_idx = img_idx if len(values) == 0 else values[0]
 
         img = self.load_image(img_idx)
 
         if title is None:
-            title = self.imgs[img_idx]['file_name']
+            title = self.imgs[img_idx]["file_name"]
 
         if anns_idx is None:
             anns_idx = self.index.imgidx_to_annidxs[img_idx]
         anns = [self.anns[i] for i in anns_idx]
 
         if cats_idx is not None:
-            anns = [ann for ann in anns if ann['category_id'] in cats_idx]
+            anns = [ann for ann in anns if ann["category_id"] in cats_idx]
 
         boxes = []
         labels = []
         scores = []
         masks = []
         for ann in anns:
-            boxes.append(ann['bbox'])
-            labels.append(ann['category_id'])
-            if 'segmentation' in ann:
-                mask = maskutils.polygons_to_mask(ann['segmentation'],
-                                                  img.height, img.width)
+            boxes.append(ann["bbox"])
+            labels.append(ann["category_id"])
+            if "segmentation" in ann:
+                mask = maskutils.polygons_to_mask(
+                    ann["segmentation"], img.height, img.width
+                )
                 masks.append(mask)
-            if 'score' in ann:
-                scores.append(float(ann['score']))
+            if "score" in ann:
+                scores.append(float(ann["score"]))
 
         if not len(scores):
             scores = [1] * len(anns)
@@ -891,37 +954,41 @@ class CocoDataset():
         if ax is None:
             _, ax = plt.subplots(1, 1, figsize=figsize)
 
-        idx_class_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
+        idx_class_dict = {idx: cat["name"] for idx, cat in self.cats.items()}
         if colors is None:
             colors = visualizeutils.generate_colormap(len(idx_class_dict) + 1)
 
-        visualizeutils.draw_instances(img,
-                                      boxes,
-                                      labels,
-                                      scores,
-                                      masks,
-                                      idx_class_dict,
-                                      title,
-                                      ax=ax,
-                                      figsize=figsize,
-                                      colors=colors,
-                                      show_boxes=show_boxes,
-                                      show_masks=show_masks,
-                                      min_score=min_score,
-                                      min_area=min_area,
-                                      box_type=visualizeutils.BoxType.xywh)
+        visualizeutils.draw_instances(
+            img,
+            boxes,
+            labels,
+            scores,
+            masks,
+            idx_class_dict,
+            title,
+            ax=ax,
+            figsize=figsize,
+            colors=colors,
+            show_boxes=show_boxes,
+            show_masks=show_masks,
+            min_score=min_score,
+            min_area=min_area,
+            box_type=visualizeutils.BoxType.xywh,
+        )
 
         return ax
 
-    def show_images(self,
-                    idxs_or_num: Union[List[int], int] = None,
-                    num_cols=4,
-                    figsize=(32, 32),
-                    show_masks=True,
-                    show_boxes=False,
-                    min_score: float = 0.5,
-                    min_area: int = 0,
-                    cats_idx: List[int] = None) -> plt.Figure:
+    def show_images(
+        self,
+        idxs_or_num: Union[List[int], int] = None,
+        num_cols=4,
+        figsize=(32, 32),
+        show_masks=True,
+        show_boxes=False,
+        min_score: float = 0.5,
+        min_area: int = 0,
+        cats_idx: List[int] = None,
+    ) -> plt.Figure:
         """show the images with their annotations
 
         Args:
@@ -937,11 +1004,11 @@ class CocoDataset():
             plt.Figure: [description]
         """
         if idxs_or_num is None:
-            img_idxs = np.random.choice(list(self.imgs.keys()), 8,
-                                        False).tolist()
+            img_idxs = np.random.choice(list(self.imgs.keys()), 8, False).tolist()
         elif isinstance(idxs_or_num, int):
-            img_idxs = np.random.choice(list(self.imgs.keys()), idxs_or_num,
-                                        False).tolist()
+            img_idxs = np.random.choice(
+                list(self.imgs.keys()), idxs_or_num, False
+            ).tolist()
         else:
             img_idxs = idxs_or_num
 
@@ -949,27 +1016,29 @@ class CocoDataset():
         fig = plt.figure(figsize=figsize)
 
         gs = gridspec.GridSpec(num_rows, num_cols, figure=fig)
-        gs.update(wspace=0.025, hspace=0.05)    # set the spacing between axes.
+        gs.update(wspace=0.025, hspace=0.05)  # set the spacing between axes.
 
-        class_name_dict = {idx: cat['name'] for idx, cat in self.cats.items()}
+        class_name_dict = {idx: cat["name"] for idx, cat in self.cats.items()}
         colors = visualizeutils.generate_colormap(len(class_name_dict) + 1)
 
         for i, img_idx in enumerate(img_idxs):
             ax = plt.subplot(gs[i])
-            ax.set_aspect('equal')
-            self.show_image(img_idx,
-                            ax=ax,
-                            colors=colors,
-                            show_masks=show_masks,
-                            show_boxes=show_boxes,
-                            min_score=min_score,
-                            min_area=min_area,
-                            cats_idx=cats_idx)
+            ax.set_aspect("equal")
+            self.show_image(
+                img_idx,
+                ax=ax,
+                colors=colors,
+                show_masks=show_masks,
+                show_boxes=show_boxes,
+                min_score=min_score,
+                min_area=min_area,
+                cats_idx=cats_idx,
+            )
 
         return fig
 
     def split(self, train_perc, val_perc, test_perc=None) -> Tuple:
-        """split the dataset 
+        """split the dataset
 
         Args:
             train_perc ([type]): [description]
@@ -986,7 +1055,8 @@ class CocoDataset():
             test_perc = 1 - (train_perc + val_perc)
         if not int(train_perc + val_perc + test_perc) == 1:
             raise ValueError(
-                'the sum of train val and test percentage is not equal to 1')
+                "the sum of train val and test percentage is not equal to 1"
+            )
 
         train_end = int(len(self.imgs) * train_perc)
         val_end = int(len(self.imgs) * (train_perc + val_perc))
@@ -1012,7 +1082,6 @@ class CocoDataset():
 
 
 class Index(object):
-
     def __init__(self, coco: CocoDataset) -> None:
         self.catidx_to_imgidxs: DefaultDict[int, Set[int]] = defaultdict(set)
         self.imgidx_to_annidxs: DefaultDict[int, Set[int]] = defaultdict(set)
@@ -1022,7 +1091,6 @@ class Index(object):
             self.imgidx_to_annidxs[img_idx] = set()
 
         for idx, ann_meta in coco.anns.items():
-            self.catidx_to_imgidxs[ann_meta['category_id']].add(
-                (ann_meta['image_id']))
-            self.imgidx_to_annidxs[ann_meta['image_id']].add((idx))
-            self.catidx_to_annidxs[ann_meta['category_id']].add(idx)
+            self.catidx_to_imgidxs[ann_meta["category_id"]].add((ann_meta["image_id"]))
+            self.imgidx_to_annidxs[ann_meta["image_id"]].add((idx))
+            self.catidx_to_annidxs[ann_meta["category_id"]].add(idx)

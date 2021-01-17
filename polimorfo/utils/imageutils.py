@@ -27,11 +27,11 @@ def download_image(url_path):
     try:
         response = requests.get(url, timeout=15, allow_redirects=False)
         if response.ok:
-            img = Image.open(BytesIO(response.content)).convert('RGB')
+            img = Image.open(BytesIO(response.content)).convert("RGB")
             img.save(path, "JPEG", optimize=True)
         response.close()
     except Exception as ex:
-        log.debug('error processing the url %s' % (url), ex)
+        log.debug("error processing the url %s" % (url), ex)
 
 
 def download_images(urls_filepath: List[str], timeout: int):
@@ -44,6 +44,6 @@ def download_images(urls_filepath: List[str], timeout: int):
     parallelism = multiprocessing.cpu_count() // 2
 
     with Pool(parallelism) as pool:
-        with tqdm(total=len(urls_filepath), desc='download images') as pbar:
+        with tqdm(total=len(urls_filepath), desc="download images") as pbar:
             for _ in pool.imap_unordered(download_image, urls_filepath):
                 pbar.update()
