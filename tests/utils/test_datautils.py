@@ -1,8 +1,10 @@
-from polimorfo.utils import datautils
-from pathlib import Path
 import os
-import pytest
 import shutil
+from pathlib import Path
+
+import pytest
+
+from polimorfo.utils import datautils
 
 BASE_PATH = Path(__file__).parent.parent / "data"
 
@@ -14,28 +16,28 @@ def cleandir():
         shutil.rmtree(to_cancel)
 
 
-def test_download_mnist():
-    dst_path = BASE_PATH / "mnist.zip"
-    file_size = datautils.download_url(
-        url="https://github.com/mlampros/DataSets/raw/master/mnist.zip",
-        dst_path=dst_path,
-    )
-    assert file_size == 15291135
-    assert dst_path.exists()
-    os.remove(dst_path)
+# def test_download_mnist():
+#     dst_path = BASE_PATH / "mnist.zip"
+#     file_size = datautils.download_url(
+#         url="https://github.com/mlampros/DataSets/raw/master/mnist.zip",
+#         dst_path=dst_path,
+#     )
+#     assert file_size == 15291135
+#     assert dst_path.exists()
+#     os.remove(dst_path)
 
 
-def test_unzip_file():
-    dst_path = BASE_PATH / "mnist.zip"
-    _ = datautils.download_url(
-        url="https://github.com/mlampros/DataSets/raw/master/mnist.zip",
-        dst_path=dst_path,
-    )
-    out_paths = datautils.extract_archive(str(dst_path))
-    assert out_paths[0].name == "mnist.csv"
-    for out in out_paths:
-        shutil.rmtree(out.parent)
-    os.remove(dst_path)
+# def test_unzip_file():
+#     dst_path = BASE_PATH / "mnist.zip"
+#     _ = datautils.download_url(
+#         url="https://github.com/mlampros/DataSets/raw/master/mnist.zip",
+#         dst_path=dst_path,
+#     )
+#     out_paths = datautils.extract_archive(str(dst_path))
+#     assert out_paths[0].name == "mnist.csv"
+#     for out in out_paths:
+#         shutil.rmtree(out.parent)
+#     os.remove(dst_path)
 
 
 def test_download_gdrivezip():

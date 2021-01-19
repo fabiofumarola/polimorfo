@@ -11,6 +11,8 @@ from PIL import Image
 from scipy import special
 from skimage import measure
 
+from ..datasets import semanticcoco
+
 
 def change_color_brightness(color: Tuple, brightness_factor: float):
     """
@@ -293,6 +295,7 @@ def draw_segmentation(
     title: str = "",
     ax: plt.Axes = None,
     figsize: Tuple[int, int] = (16, 8),
+    one_mask_per_class: bool = True,
 ):
     """draw the result from a segmentation model
 
@@ -307,6 +310,7 @@ def draw_segmentation(
         title (str, optional): [description]. Defaults to ''.
         ax (plt.Axes, optional): [description]. Defaults to None.
         figsize (Tuple[int, int], optional): [description]. Defaults to (16, 8).
+        one_mask_per_class (bool, optional): if True save only the largest mask per class (default: True)
 
     Returns:
         [plt.Axes]: the ax of the given plot
@@ -337,6 +341,11 @@ def draw_segmentation(
 
     for cat in np.unique(masks)[1:]:
         mask = masks == cat
+
+        if one_mask_per_class:
+            groups, n_groups = semanticcoco.largest_object(mask)
+            mask = groups == n_groups
+
         conf = np.round(np.nan_to_num(probs[cat, mask].mean()), 2)
         if conf < min_conf:
             continue
