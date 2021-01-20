@@ -47,7 +47,6 @@ class SemanticCoco(CocoDataset):
         img_id: int,
         logits: np.ndarray,
         min_conf: float,
-        one_mask_per_class: bool = False,
         start_index=1,
     ) -> List[int]:
         """
@@ -57,7 +56,6 @@ class SemanticCoco(CocoDataset):
             img_id (int): the id of the image to associate the annotations
             logits (np.ndarray): an array of shape [NClasses, Height, Width]
             min_conf (float): the minimum confidence used to filter the generated masks
-            one_mask_per_class (bool, optional): if True save only the largest mask per class (default: False)
             cats_idxs (List, optional): A list that maps the. Defaults to None.
             start_index (int, optional): the index to start generating the coco polygons.
                 Normally, 0 encodes the background. Defaults to 1.
@@ -89,18 +87,11 @@ class SemanticCoco(CocoDataset):
             if conf < min_conf:
                 continue
 
-            # remove all the pixels with score lower
-            filt_mask = np.copy(mask)
-            filt_mask[probs[cat_idx, ...] < min_conf] = 0
-
             cat_id = int(cat_idx)
             if cat_id not in self.cats:
                 raise ValueError(f"cats {cat_id} not in dataset categories")
 
-            if one_mask_per_class:
-                groups, n_groups = largest_object(filt_mask)
-            else:
-                groups, n_groups = scipy.ndimage.label(filt_mask)
+            groups, n_groups = scipy.ndimage.label(mask)
 
             # get the groups starting from label 1
             for group_idx in range(1, n_groups + 1):
