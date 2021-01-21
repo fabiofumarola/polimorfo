@@ -149,3 +149,10 @@ History
 ------------
 
 * add new feature to save images and masks to a folder and filter out images and mask with less than k annotations
+
+
+0.9.52
+-----------
+
+* the method `get_segmentation_mask` return also the avg score of the image annotations
+* the method `save_mask_images` save also a weight files with the avg score for the image

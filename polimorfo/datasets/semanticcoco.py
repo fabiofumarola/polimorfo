@@ -11,31 +11,6 @@ from .coco import CocoDataset
 __all__ = ["SemanticCoco", "SemanticCocoDataset"]
 
 
-def largest_object(mask):
-    """in case the mask contains multiple separated area return the largest
-
-    Args:
-        mask ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """
-    groups, n_groups = scipy.ndimage.label(mask)
-
-    largest_area = 0
-    largest_id = 0
-
-    for group_idx in range(1, n_groups + 1):
-        group_mask = (groups == group_idx).astype(np.uint8)
-        if group_mask.sum() > largest_area:
-            largest_area = group_mask.sum()
-            largest_id = group_idx
-
-    n_groups = 1
-    groups[groups != largest_id] = (0,)
-    return groups, n_groups
-
-
 class SemanticCoco(CocoDataset):
     """
     An extension of the coco dataset to handle the output of a semantic segmentation model
@@ -107,6 +82,7 @@ class SemanticCoco(CocoDataset):
                     continue
                 group_prob_mask = group_mask * probs[cat_idx]
                 score = float(np.mean(group_prob_mask[group_prob_mask > 0]))
+
                 annotation_ids.append(
                     self.add_annotation(img_id, cat_id, polygons, area, bbox, 0, score)
                 )

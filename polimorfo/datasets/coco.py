@@ -483,6 +483,7 @@ class CocoDataset:
         """Save images and segmentation mask into folders:
             * segments
             * images
+            * weights.csv that contains the pairs image_name, weight
             children of the specified path
 
         Args:
@@ -499,6 +500,8 @@ class CocoDataset:
         images_path.mkdir(exist_ok=True, parents=True)
         segments_path = path / "segments"
         segments_path.mkdir(exist_ok=True, parents=True)
+        scores = []
+        scores_path = path / "images_weights.csv"
 
         for img_idx, img_meta in tqdm(
             self.imgs.items(),
@@ -520,14 +523,18 @@ class CocoDataset:
             segm_path = segments_path / (name + ".png")
             if segm_path.exists():
                 continue
-            segm_img = self.get_segmentation_mask(
+            segm_img, avg_score = self.get_segmentation_mask(
                 img_idx, cats_idx, remapping_dict, min_conf, ignore_index
             )
             segm_img.save(segm_path)
+            scores.append(f"{segm_path.name},{avg_score}\n")
 
         cat_idx_dict = dict()
         for idx, cat in self.cats.items():
             cat_idx_dict[cat["name"]] = idx
+
+        with open(scores_path, "w") as f:
+            f.writelines(scores)
 
         with open(path / "cat_idx_dict.json", "w") as f:
             json.dump(cat_idx_dict, f)
@@ -566,7 +573,7 @@ class CocoDataset:
             segm_path = path / (name + ".png")
             if segm_path.exists():
                 continue
-            segm_img = self.get_segmentation_mask(
+            segm_img, _ = self.get_segmentation_mask(
                 img_idx, cats_idx, remapping_dict, min_conf, ignore_index
             )
             segm_img.save(segm_path)
@@ -603,8 +610,8 @@ class CocoDataset:
         remapping_dict: Dict[int, int] = None,
         min_conf: float = 0.5,
         ignore_index: int = 255,
-    ):
-        """generate a mask for the given image idx
+    ) -> Tuple[Image.Image, float]:
+        """generate a mask and weight for the given image idx
 
         Args:
             img_idx (int): [the id of the image]
@@ -614,12 +621,14 @@ class CocoDataset:
             ignore_index (int): the value used to replace segments with confidence below min_conf
 
         Returns:
-            [type]: [description]
+            Tuple[Image.Image, float]: [description]
         """
         img_meta = self.imgs[img_idx]
         height, width = img_meta["height"], img_meta["width"]
         anns = self.get_annotations(img_idx, cats_idx)
         target_image = np.zeros((height, width), dtype=np.uint8)
+        score = 0
+        count = 0
 
         segmentations = [obj["segmentation"] for obj in anns]
         if len(segmentations):
@@ -642,13 +651,16 @@ class CocoDataset:
                 if elem["score"] < min_conf:
                     target_image[elem["mask"] == 1] = ignore_index
                 else:
+                    score += elem["score"]
+                    count += 1
                     if remapping_dict is not None and elem["id"] in remapping_dict:
                         target_image[elem["mask"] == 1] = remapping_dict[elem["id"]]
                     else:
                         target_image[elem["mask"] == 1] = elem["id"]
 
         target = Image.fromarray(target_image)
-        return target
+        avg_score = score / count if count else count
+        return target, avg_score
 
     def load_image(self, idx):
         """load an image from the idx
