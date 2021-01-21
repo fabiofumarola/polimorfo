@@ -533,10 +533,10 @@ class CocoDataset:
         for idx, cat in self.cats.items():
             cat_idx_dict[cat["name"]] = idx
 
-        with open(scores_path, "w") as f:
+        with open(scores_path, "w+") as f:
             f.writelines(scores)
 
-        with open(path / "cat_idx_dict.json", "w+") as f:
+        with open(path / "cat_idx_dict.json", "w") as f:
             json.dump(cat_idx_dict, f)
 
         return images_path, segments_path
