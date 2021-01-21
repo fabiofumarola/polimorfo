@@ -582,7 +582,7 @@ class CocoDataset:
         for idx, cat in self.cats.items():
             cat_idx_dict[cat["name"]] = idx
 
-        with open(path.parent / "cat_idx_dict.json", "w") as f:
+        with open(path.parent / "cat_idx_dict.json", "wa") as f:
             json.dump(cat_idx_dict, f)
 
     def remap_categories(self, remapping_dict: Dict[int, int]) -> None:
