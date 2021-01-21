@@ -536,7 +536,7 @@ class CocoDataset:
         with open(scores_path, "w") as f:
             f.writelines(scores)
 
-        with open(path / "cat_idx_dict.json", "w") as f:
+        with open(path / "cat_idx_dict.json", "w+") as f:
             json.dump(cat_idx_dict, f)
 
         return images_path, segments_path
@@ -582,7 +582,7 @@ class CocoDataset:
         for idx, cat in self.cats.items():
             cat_idx_dict[cat["name"]] = idx
 
-        with open(path.parent / "cat_idx_dict.json", "wa") as f:
+        with open(path.parent / "cat_idx_dict.json", "w") as f:
             json.dump(cat_idx_dict, f)
 
     def remap_categories(self, remapping_dict: Dict[int, int]) -> None:
