@@ -57,7 +57,7 @@ class SemanticCoco(CocoDataset):
         annotation_ids = []
         for cat_idx in np.unique(masks)[start_index:]:
             mask = (masks == cat_idx).astype(np.uint8)
-            conf = np.round(np.nan_to_num(probs[cat_idx, mask].mean()), 2)
+            conf = np.round(np.nan_to_num(probs[cat_idx, (mask > 0)].mean()), 2)
 
             if conf < min_conf:
                 continue
