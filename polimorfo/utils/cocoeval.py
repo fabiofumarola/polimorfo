@@ -1,12 +1,15 @@
+import sys
 from pathlib import Path
-from polimorfo.datasets.coco import CocoDataset
 from typing import Dict, List, Tuple
-from tqdm import tqdm
+
 import numpy as np
-from . import maskutils
 import pandas as pd
 from sklearn import metrics
-import sys
+from tqdm import tqdm
+
+from polimorfo.datasets.coco import CocoDataset
+
+from . import maskutils
 
 __all__ = [
     "generate_predictions",
@@ -153,7 +156,7 @@ def generate_predictions_from_ds(
                 ]
             )
 
-        # iterate of the gr annotations
+        # iterate of the gt annotations
         for gt_ann in gt_anns:
             gt_mask = maskutils.polygons_to_mask(
                 gt_ann["segmentation"], gt_img_meta["height"], gt_img_meta["width"]
