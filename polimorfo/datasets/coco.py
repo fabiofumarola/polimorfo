@@ -10,6 +10,7 @@ from typing import DefaultDict, Dict, List, Set, Tuple, Union
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from deprecated import deprecated
 from PIL import Image
 from tqdm import tqdm
@@ -250,13 +251,15 @@ class CocoDataset:
         ]
         self.merge_category_ids(catidx_to_merge, new_cat)
 
-    def merge_category_ids(self, cat_to_merge: List[int], new_cat: str) -> None:
+    def merge_category_ids(
+        self, cat_to_merge: Union[List[int], List[str]], new_cat: str
+    ) -> None:
         """Merge two or more categories labels to a new single category.
             Remove from __content the category to be merged and update
             annotations cat_ids and reindex data with update content.
 
         Args:
-            cat_to_merge (List[int]): categories to be merged
+            cat_to_merge (List[int | str]): categories to be merged
             new_cat (str): new label to assign to the merged categories
         """
         new_cat_idx = max(self.cats.keys()) + 1
@@ -309,7 +312,7 @@ class CocoDataset:
             del self.imgs[idx]
         self.reindex()
 
-    def cleanup_missing_images(self):
+    def remove_missing_images(self):
         """remove the images missing from images folder"""
         to_remove_idx = []
         for idx in self.imgs:
@@ -918,7 +921,13 @@ class CocoDataset:
             plt.Axes: [description]
         """
         if img_idx is None:
-            img_idx = np.random.randint(0, self.img_id)
+            if cats_idx is not None:
+                imgs = []
+                for cat in cats_idx:
+                    imgs.extend(self.index.catidx_to_imgidxs[cat])
+                    img_idx = np.random.choice(imgs, 1)[0]
+            else:
+                img_idx = np.random.randint(0, self.img_id)
 
         if img_name is not None:
             values = [
@@ -1091,6 +1100,88 @@ class CocoDataset:
         train_ds.reindex()
 
         return train_ds, val_ds, test_ds
+
+    def dataset_report(
+        self,
+    ) -> None:
+        """returns:
+        - the a box plot for the images areas
+        - a boxplot for the bounding boxes area
+        - a boxplot for the bounding boxes area per class
+        - a boxplot of the masks area
+        - a boxplot of the mask area per class
+        - the weights per class in terms of segmentation mask
+        """
+        features = [
+            [
+                "img_idx",
+                "img_height",
+                "img_width",
+                "img_area",
+                "ann_idx",
+                "ann_cat",
+                "ann_height",
+                "ann_width",
+                "ann_x_pos",
+                "ann_y_pos",
+                "ann_box_area",
+                "ann_mask_area",
+            ]
+        ]
+        for img_idx, anns_idxs in tqdm(self.index.imgidx_to_annidxs.items()):
+            img_meta = self.imgs[img_idx]
+            img_height = img_meta["height"]
+            img_width = img_meta["width"]
+            img_area = img_height * img_width
+            bg_area = img_area
+            for ann_idx in anns_idxs:
+                ann = self.anns[ann_idx]
+                ann_cat = self.cats[ann["category_id"]]["name"]
+                ann_height = ann["bbox"][-1]
+                ann_width = ann["bbox"][-2]
+                ann_x_pos = ann["bbox"][0]
+                ann_y_pos = ann["bbox"][1]
+                ann_box_area = ann["area"]
+                ann_mask = maskutils.polygons_to_mask(
+                    ann["segmentation"], img_height, img_height
+                )
+                ann_mask_area = np.count_nonzero(ann_mask)
+                bg_area -= ann_mask_area
+                features.append(
+                    [
+                        img_idx,
+                        img_height,
+                        img_width,
+                        img_area,
+                        ann_idx,
+                        ann_cat,
+                        ann_height,
+                        ann_width,
+                        ann_x_pos,
+                        ann_y_pos,
+                        ann_box_area,
+                        ann_mask_area,
+                    ]
+                )
+            features.append(
+                [
+                    img_idx,
+                    img_height,
+                    img_width,
+                    img_area,
+                    0,
+                    "background",
+                    0,
+                    0,
+                    0,
+                    0,
+                    bg_area,
+                    bg_area,
+                ]
+            )
+
+        df = pd.DataFrame(features[1:], columns=features[0])
+        return df
 
 
 class Index(object):
