@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import pycocotools.mask as mask_util
-from skimage import measure
 
 __all__ = [
     "mask_to_polygon",
@@ -51,13 +50,29 @@ def area(mask, min_score=0.5):
     return mask.sum()
 
 
-def bbox(polygons, height, width):
+def bbox(
+    polygons,
+    height,
+    width,
+):
     p = mask_util.frPyObjects(polygons, height, width)
     p = mask_util.merge(p)
-    bbox = mask_util.toBbox(p)
-    bbox[2] += bbox[0]
-    bbox[3] += bbox[1]
-    return bbox
+    bbox_xywh = mask_util.toBbox(p)
+    return bbox_xywh
+
+
+def bbox_from_mask(mask):
+    pairs = np.argwhere(mask == True)
+    if len(pairs) == 0:
+        return None, None, None, None
+    min_row = min(pairs[:, 0])
+    max_row = max(pairs[:, 0])
+    min_col = min(pairs[:, 1])
+    max_col = max(pairs[:, 1])
+    w = max_col - min_col
+    h = max_row - min_row
+    print(min_col, min_row, max_col, max_row)
+    return [min_col, min_row, w, h]
 
 
 def coco_poygons_to_mask(segmentations, height, width) -> np.ndarray:

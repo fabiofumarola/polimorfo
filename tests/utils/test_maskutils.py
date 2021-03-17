@@ -1,6 +1,7 @@
 import numpy as np
-from polimorfo.utils import maskutils
 import pytest
+
+from polimorfo.utils import maskutils
 
 
 def test_mask_to_polygons():
@@ -21,6 +22,14 @@ def test_mask_to_polygons():
 
     polygons = maskutils.mask_to_polygon(mask)
     assert len(polygons) == 1
+
+
+def test_bbox_dimension():
+    mask = np.zeros((15, 16))
+    mask[4:10, 5:12] = 1
+    polyongs = maskutils.mask_to_polygon(mask)
+    bbox = maskutils.bbox(polyongs, mask.shape[0], mask.shape[1])
+    assert tuple(bbox.tolist()) == (5, 4, 6, 5)
 
 
 def test_bbox():

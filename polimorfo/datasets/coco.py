@@ -342,18 +342,27 @@ class CocoDataset:
             for cat_id, imgs_list in self.index.catidx_to_imgidxs.items()
         }
 
-    def count_annotations_per_category(self):
-        """the number of annotations per category
+    def count_annotations_per_category(self, sort_by="value") -> Dict[str, int]:
+        """the count of annotations per category
+
+        Args:s
+            sort_by (str, optional): [description]. Defaults to 'value'.
+
         Returns:
             list -- a list of tuples (category_name, number of annotations)
         """
         if not self.index:
             self.reindex()
 
-        return {
+        result = {
             self.cats[cat_id]["name"]: len(set(anns_list))
             for cat_id, anns_list in self.index.catidx_to_annidxs.items()
         }
+        if sort_by == 'key':
+            return dict(sorted(result.items(), key=lambda x: x[0], reverse=False))
+        elif sort_by == 'value':
+            return dict(sorted(result.items(), key=lambda x: x[1], reverse=True))
+
 
     def keep_categories(self, ids: List[int], remove_images: bool = False):
         """keep images and annotations only from the selected categories

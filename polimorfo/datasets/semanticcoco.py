@@ -149,7 +149,12 @@ class SemanticCoco(CocoDataset):
                 if len(polygons) == 0:
                     continue
 
-                bbox = maskutils.bbox(polygons, *masks.shape).tolist()
+                bbox = maskutils.bbox_from_mask(group_mask)
+                if bbox[0] is None:
+                    continue
+
+                # FIXME can have problems
+                # bbox = maskutils.bbox(polygons, *masks.shape).tolist()
                 # an exception is generated when the mask has less than 3 points
                 area = int(maskutils.area(group_mask))
                 if area == 0:
