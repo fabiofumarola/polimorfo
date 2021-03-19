@@ -71,7 +71,7 @@ def bbox_from_mask(mask):
     max_col = max(pairs[:, 1])
     w = max_col - min_col
     h = max_row - min_row
-    return [min_col, min_row, w, h]
+    return [float(min_col), float(min_row), float(w), float(h)]
 
 
 def coco_poygons_to_mask(segmentations, height, width) -> np.ndarray:
