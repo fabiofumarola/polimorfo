@@ -71,7 +71,6 @@ def bbox_from_mask(mask):
     max_col = max(pairs[:, 1])
     w = max_col - min_col
     h = max_row - min_row
-    print(min_col, min_row, max_col, max_row)
     return [min_col, min_row, w, h]
 
 
