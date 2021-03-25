@@ -358,11 +358,10 @@ class CocoDataset:
             self.cats[cat_id]["name"]: len(set(anns_list))
             for cat_id, anns_list in self.index.catidx_to_annidxs.items()
         }
-        if sort_by == 'key':
+        if sort_by == "key":
             return dict(sorted(result.items(), key=lambda x: x[0], reverse=False))
-        elif sort_by == 'value':
+        elif sort_by == "value":
             return dict(sorted(result.items(), key=lambda x: x[1], reverse=True))
-
 
     def keep_categories(self, ids: List[int], remove_images: bool = False):
         """keep images and annotations only from the selected categories
@@ -909,6 +908,7 @@ class CocoDataset:
         min_score=0.5,
         min_area: int = 0,
         cats_idx: List[int] = None,
+        color_only_border: bool = False,
     ) -> plt.Axes:
         """show an image with its annotations
 
@@ -1004,6 +1004,7 @@ class CocoDataset:
             min_score=min_score,
             min_area=min_area,
             box_type=visualizeutils.BoxType.xywh,
+            color_only_border=color_only_border,
         )
 
         return ax

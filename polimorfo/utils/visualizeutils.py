@@ -100,8 +100,10 @@ def draw_instances(
     min_area: int = 0,
     colors: List = None,
     ax: plt.Axes = None,
-    box_type: BoxType = BoxType.xyxy,
+    box_type: BoxType = BoxType.xywh,
     only_class_idxs: List[int] = None,
+    color_only_border: bool = False,
+    alpha: float = 0.3,
 ):
     """draw the instances from a object detector or an instance segmentation model
 
@@ -119,8 +121,9 @@ def draw_instances(
         min_score (float, optional): [description]. Defaults to 0.5.
         colors (List, optional): [description]. Defaults to None.
         ax (plt.Axes, optional): [description]. Defaults to None.
-        box_type (BoxType, optional): [description]. Defaults to BoxType.xyxy.
+        box_type (BoxType, optional): [description]. Defaults to BoxType.xywh.
         only_class_idxs (List[int], optional): [description]. Defaults to None.
+        color_only_border (bool): if true if color only the border (default is False)
 
     Returns:
         [type]: [description]
@@ -220,9 +223,18 @@ def draw_instances(
             for verts in contours:
                 # Subtract the padding and flip (y, x) to (x, y)
                 verts = np.fliplr(verts) - 1
-                p = Polygon(
-                    verts, facecolor=color, edgecolor=color, fill=True, alpha=0.5
-                )
+                if color_only_border:
+                    p = Polygon(
+                        verts,
+                        facecolor=color,
+                        edgecolor=color,
+                        fill=False,
+                        alpha=alpha * 2,
+                    )
+                else:
+                    p = Polygon(
+                        verts, facecolor=color, edgecolor=color, fill=True, alpha=alpha
+                    )
                 ax.add_patch(p)
     ax.imshow(out_image)
     return ax
@@ -255,33 +267,6 @@ def create_text_labels(
         "{} {:.0f}%".format(label, score * 100) for label, score in zip(labels, scores)
     ]
     return labels
-
-
-# def draw_segmentation_map(mask: np.ndarray, colors: List[str]):
-#     """draw a segmentation map based on a class mask.
-#     The mask have to contains number that represent the class
-
-#     Args:
-#         mask (np.ndarray): [description]
-#         colors (List[str], optional): [description]. Defaults to None.
-
-#     Returns:
-#         [type]: [description]
-#     """
-#     colors_rgb = np.array([matplotlib.colors.to_rgb(c) for c in colors]) * 255
-
-#     r = np.zeros_like(mask).astype(np.uint8)
-#     g = np.zeros_like(mask).astype(np.uint8)
-#     b = np.zeros_like(mask).astype(np.uint8)
-
-#     for c in sorted(np.unique(mask))[1:]:
-#         idx = mask == c
-#         r[idx] = colors_rgb[c, 0]
-#         g[idx] = colors_rgb[c, 1]
-#         b[idx] = colors_rgb[c, 2]
-
-#     rgb = np.stack([r, g, b], axis=2)
-#     return rgb
 
 
 def draw_segmentation(
