@@ -909,6 +909,7 @@ class CocoDataset:
         min_area: int = 0,
         cats_idx: List[int] = None,
         color_border_only: bool = False,
+        line_width: int = 2,
     ) -> plt.Axes:
         """show an image with its annotations
 
@@ -1006,6 +1007,7 @@ class CocoDataset:
             min_area=min_area,
             box_type=visualizeutils.BoxType.xywh,
             color_border_only=color_border_only,
+            line_width=line_width,
         )
 
         return ax
@@ -1021,6 +1023,7 @@ class CocoDataset:
         min_area: int = 0,
         cats_idx: List[int] = None,
         color_border_only: bool = False,
+        line_width: int = 2,
     ) -> plt.Figure:
         """show the images with their annotations
 
@@ -1066,7 +1069,8 @@ class CocoDataset:
                 min_score=min_score,
                 min_area=min_area,
                 cats_idx=cats_idx,
-                color_border_only=color_border_only
+                color_border_only=color_border_only,
+                line_width=line_width,
             )
 
         return fig

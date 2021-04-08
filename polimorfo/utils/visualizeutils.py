@@ -104,6 +104,7 @@ def draw_instances(
     only_class_idxs: List[int] = None,
     color_border_only: bool = False,
     alpha: float = 0.3,
+    line_width: int = 2,
 ):
     """draw the instances from a object detector or an instance segmentation model
 
@@ -124,6 +125,7 @@ def draw_instances(
         box_type (BoxType, optional): [description]. Defaults to BoxType.xywh.
         only_class_idxs (List[int], optional): [description]. Defaults to None.
         color_only_border (bool): if true if color only the border (default is False)
+        line_width: (float): the width of the line. Defaults is 2
 
     Returns:
         [type]: [description]
@@ -193,7 +195,7 @@ def draw_instances(
                 (x, y),
                 w,
                 h,
-                linewidth=2,
+                linewidth=line_width,
                 alpha=0.7,
                 linestyle="dashed",
                 edgecolor=color,
@@ -225,8 +227,13 @@ def draw_instances(
                 verts = np.fliplr(verts) - 1
                 alpha_ = alpha * 2 if color_border_only else alpha
                 p = Polygon(
-                        verts, facecolor=color, edgecolor=color, fill=not color_border_only, alpha=alpha_
-                    )
+                    verts,
+                    facecolor=color,
+                    edgecolor=color,
+                    fill=not color_border_only,
+                    alpha=alpha_,
+                    linewidth=line_width,
+                )
                 ax.add_patch(p)
     ax.imshow(out_image)
     return ax
