@@ -908,7 +908,7 @@ class CocoDataset:
         min_score=0.5,
         min_area: int = 0,
         cats_idx: List[int] = None,
-        color_only_border: bool = False,
+        color_border_only: bool = False,
     ) -> plt.Axes:
         """show an image with its annotations
 
@@ -925,6 +925,7 @@ class CocoDataset:
             show_masks (bool, optional): [description]. Defaults to True.
             min_score (float, optional): [description]. Defaults to 0.5.
             cats_idx (List, optional): the list of categories to show. Defaults to None to display all the categories
+            color_border_only (bool, optional): if True color only the border of the component. Defaults to False
 
         Returns:
             plt.Axes: [description]
@@ -1004,7 +1005,7 @@ class CocoDataset:
             min_score=min_score,
             min_area=min_area,
             box_type=visualizeutils.BoxType.xywh,
-            color_only_border=color_only_border,
+            color_border_only=color_border_only,
         )
 
         return ax
@@ -1019,6 +1020,7 @@ class CocoDataset:
         min_score: float = 0.5,
         min_area: int = 0,
         cats_idx: List[int] = None,
+        color_border_only: bool = False,
     ) -> plt.Figure:
         """show the images with their annotations
 
@@ -1064,6 +1066,7 @@ class CocoDataset:
                 min_score=min_score,
                 min_area=min_area,
                 cats_idx=cats_idx,
+                color_border_only=color_border_only
             )
 
         return fig

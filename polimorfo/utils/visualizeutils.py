@@ -102,7 +102,7 @@ def draw_instances(
     ax: plt.Axes = None,
     box_type: BoxType = BoxType.xywh,
     only_class_idxs: List[int] = None,
-    color_only_border: bool = False,
+    color_border_only: bool = False,
     alpha: float = 0.3,
 ):
     """draw the instances from a object detector or an instance segmentation model
@@ -223,17 +223,9 @@ def draw_instances(
             for verts in contours:
                 # Subtract the padding and flip (y, x) to (x, y)
                 verts = np.fliplr(verts) - 1
-                if color_only_border:
-                    p = Polygon(
-                        verts,
-                        facecolor=color,
-                        edgecolor=color,
-                        fill=False,
-                        alpha=alpha * 2,
-                    )
-                else:
-                    p = Polygon(
-                        verts, facecolor=color, edgecolor=color, fill=True, alpha=alpha
+                alpha_ = alpha * 2 if color_border_only else alpha
+                p = Polygon(
+                        verts, facecolor=color, edgecolor=color, fill=not color_border_only, alpha=alpha_
                     )
                 ax.add_patch(p)
     ax.imshow(out_image)
