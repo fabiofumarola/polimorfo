@@ -169,6 +169,70 @@ class SemanticCoco(CocoDataset):
                 )
         return annotation_ids
 
+    def add_annotations_v3(
+        self,
+        img_id: int,
+        probs: np.ndarray,
+        min_conf: float,
+        single_group: bool = False,
+    ) -> List[int]:
+        """Transforms annotations from a probability mask to a coco format
+
+        Args:
+            img_id (int): [description]
+            probs (np.ndarray): [description]
+            min_conf (float): [description]
+            start_index (int, optional): [description]. Defaults to 1.
+            largest_group_only (bool, optional): [description]. Defaults to False.
+
+        Returns:
+            List[int]: [description]
+        """
+        annotation_ids = []
+        global_mask = probs.argmax(0)
+        # iterate over the found classes
+        for class_idx in global_mask.unique():
+            if class_idx == 0:
+                continue
+            # get the probabiliy mask over the class_idx
+            class_prob_mask = probs[1] * (global_mask == 1)
+            # transform the mask to polygons
+            class_polygons = maskutils.mask_to_polygon(class_prob_mask, 0.5)
+
+            if single_group:
+                median_conf = np.median(class_prob_mask)
+                if median_conf < min_conf:
+                    continue
+
+                bbox = maskutils.bbox_from_mask(class_polygons)
+                area = int(maskutils.area(class_polygons))
+                annotation_ids.append(
+                    self.add_annotation(
+                        img_id, class_idx, class_polygons, area, bbox, 0, median_conf
+                    )
+                )
+            else:
+                # for each polyong in polygons
+                for poly in class_polygons:
+                    poly_mask = maskutils.polygons_to_mask(
+                        [poly], global_mask.shape[0], global_mask.shape[1]
+                    )
+                    poly_mask_prob = poly_mask * probs[class_idx]
+                    prob_values = poly_mask_prob[poly_mask_prob > 0]
+                    median_conf = np.median(prob_values)
+                    if median_conf < min_conf:
+                        continue
+
+                    bbox = maskutils.bbox_from_mask(poly_mask)
+                    area = int(maskutils.area(poly_mask))
+                    annotation_ids.append(
+                        self.add_annotation(
+                            img_id, class_idx, [poly], area, bbox, 0, median_conf
+                        )
+                    )
+
+        return annotation_ids
+
 
 @deprecated(version="0.9.34", reason="you should use SemanticCoco")
 class SemanticCocoDataset(SemanticCoco):
