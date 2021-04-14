@@ -219,7 +219,7 @@ class SemanticCoco(CocoDataset):
                     )
                     poly_mask_prob = poly_mask * probs[class_idx]
                     prob_values = poly_mask_prob[poly_mask_prob > 0]
-                    median_conf = np.median(prob_values)
+                    median_conf = float(np.median(prob_values))
                     if median_conf < min_conf:
                         continue
 
@@ -227,7 +227,7 @@ class SemanticCoco(CocoDataset):
                     area = int(maskutils.area(poly_mask))
                     annotation_ids.append(
                         self.add_annotation(
-                            img_id, class_idx, [poly], area, bbox, 0, median_conf
+                            img_id, int(class_idx), [poly], area, bbox, 0, median_conf
                         )
                     )
 
