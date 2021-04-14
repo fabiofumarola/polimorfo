@@ -195,7 +195,7 @@ class SemanticCoco(CocoDataset):
             if class_idx == 0:
                 continue
             # get the probabiliy mask over the class_idx
-            class_prob_mask = probs[1] * (global_mask == 1)
+            class_prob_mask = probs[class_idx] * (global_mask == class_idx)
             # transform the mask to polygons
             class_polygons = maskutils.mask_to_polygon(class_prob_mask, 0.5)
 
