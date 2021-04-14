@@ -191,7 +191,7 @@ class SemanticCoco(CocoDataset):
         annotation_ids = []
         global_mask = probs.argmax(0)
         # iterate over the found classes
-        for class_idx in global_mask.unique():
+        for class_idx in np.unique(global_mask):
             if class_idx == 0:
                 continue
             # get the probabiliy mask over the class_idx
