@@ -205,6 +205,9 @@ class SemanticCoco(CocoDataset):
                     continue
 
                 bbox = maskutils.bbox_from_mask(class_polygons)
+                if bbox[0] is None:
+                    continue
+
                 area = int(maskutils.area(class_polygons))
                 annotation_ids.append(
                     self.add_annotation(
@@ -224,6 +227,8 @@ class SemanticCoco(CocoDataset):
                         continue
 
                     bbox = maskutils.bbox_from_mask(poly_mask)
+                    if bbox[0] is None:
+                        continue
                     area = int(maskutils.area(poly_mask))
                     annotation_ids.append(
                         self.add_annotation(
