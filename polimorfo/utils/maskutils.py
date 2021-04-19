@@ -32,10 +32,10 @@ def mask_to_polygon(mask, min_score: float = 0.5, approx: float = 0.01):
     polygons = []
     for cnt in contours:
         epsilon = approx * cv2.arcLength(cnt, True)
-        approx = cv2.approxPolyDP(cnt, epsilon, True)
+        approx_poly = cv2.approxPolyDP(cnt, epsilon, True)
         # we need to draw a least a box
-        if len(approx) >= 4:
-            approx_flattened = approx.flatten().tolist()
+        if len(approx_poly) >= 4:
+            approx_flattened = approx_poly.flatten().tolist()
             polygons.append(approx_flattened)
     return polygons
 
