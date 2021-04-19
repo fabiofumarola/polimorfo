@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import pycocotools.mask as mask_util
+from matplotlib.pyplot import contour
 
 __all__ = [
     "mask_to_polygon",
@@ -11,16 +12,31 @@ __all__ = [
 ]
 
 
-def mask_to_polygon(mask, min_score=0.5):
+def mask_to_polygon(mask, min_score: float = 0.5, approx: float = 0.01):
+    """generate polygons from masks
+
+    Args:
+        mask (np.ndarray): a binary mask
+        min_score (float, optional): [description]. Defaults to 0.5.
+        approx (float, optional): it approximate the polygons to reduce the number of points. Defaults to 0.01, that means reduce
+            the number of points by 10%.
+
+    Returns:
+        [type]: [description]
+    """
     mask = (mask > min_score).astype(np.uint8)
     mask = cv2.copyMakeBorder(mask, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
-    polygons = cv2.findContours(
+    contours, hierarchy = cv2.findContours(
         mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE, offset=(-1, -1)
     )
-    polygons = polygons[0] if len(polygons) == 2 else polygons[1]
-    polygons = [polygon.flatten().tolist() for polygon in polygons]
-    # add filter to remove invalid polygons
-    polygons = [polygon for polygon in polygons if len(polygon) >= 8]
+    polygons = []
+    for cnt in contours:
+        epsilon = approx * cv2.arcLength(cnt, True)
+        approx = cv2.approxPolyDP(cnt, epsilon, True)
+        # we need to draw a least a box
+        if len(approx) >= 4:
+            approx_flattened = approx.flatten().tolist()
+            polygons.append(approx_flattened)
     return polygons
 
 
