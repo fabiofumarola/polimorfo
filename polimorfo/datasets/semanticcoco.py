@@ -175,6 +175,8 @@ class SemanticCoco(CocoDataset):
         probs: np.ndarray,
         min_conf: float,
         single_group: bool = False,
+        approx: float = 0.005,
+        relative: bool = True,
     ) -> List[int]:
         """Transforms annotations from a probability mask to a coco format
 
@@ -184,6 +186,7 @@ class SemanticCoco(CocoDataset):
             min_conf (float): [description]
             start_index (int, optional): [description]. Defaults to 1.
             largest_group_only (bool, optional): [description]. Defaults to False.
+            approx (float, optional): the factor used to approximate the polygons by reducint the number of points
 
         Returns:
             List[int]: [description]
@@ -197,7 +200,9 @@ class SemanticCoco(CocoDataset):
             # get the probabiliy mask over the class_idx
             class_prob_mask = probs[class_idx] * (global_mask == class_idx)
             # transform the mask to polygons
-            class_polygons = maskutils.mask_to_polygon(class_prob_mask, 0.5)
+            class_polygons = maskutils.mask_to_polygon(
+                class_prob_mask, min_score=0.5, approx=approx, relative=relative
+            )
 
             if single_group:
                 median_conf = np.median(class_prob_mask)

@@ -12,7 +12,9 @@ __all__ = [
 ]
 
 
-def mask_to_polygon(mask, min_score: float = 0.5, approx: float = 0.01):
+def mask_to_polygon(
+    mask, min_score: float = 0.5, approx: float = 0.01, relative: bool = True
+):
     """generate polygons from masks
 
     Args:
@@ -31,7 +33,10 @@ def mask_to_polygon(mask, min_score: float = 0.5, approx: float = 0.01):
     )
     polygons = []
     for cnt in contours:
-        epsilon = approx * cv2.arcLength(cnt, True)
+        if relative:
+            epsilon = approx * cv2.arcLength(cnt, True)
+        else:
+            epsilon = approx
         approx_poly = cv2.approxPolyDP(cnt, epsilon, True)
         # we need to draw a least a box
         if len(approx_poly) >= 4:
