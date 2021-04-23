@@ -105,6 +105,7 @@ def draw_instances(
     color_border_only: bool = False,
     alpha: float = 0.3,
     line_width: int = 2,
+    font_size: int = 10,
 ):
     """draw the instances from a object detector or an instance segmentation model
 
@@ -214,7 +215,6 @@ def draw_instances(
         horiz_align = "left"
 
         lighter_color = change_color_brightness(color, brightness_factor=0.7)
-        font_size = 10
         draw_text(ax, label_name, text_pos, font_size, lighter_color, horiz_align)
         if show_masks:
             padded_mask = np.zeros(
@@ -345,6 +345,90 @@ def draw_segmentation(
             (filt_mask.shape[0] + 2, filt_mask.shape[1] + 2), dtype=np.uint8
         )
         padded_mask[1:-1, 1:-1] = filt_mask
+        contours = measure.find_contours(padded_mask, 0.5)
+        for verts in contours:
+            verts = np.fliplr(verts) - 1
+            p = Polygon(
+                verts,
+                facecolor=color,
+                edgecolor=lighter_color,  # 'black',
+                fill=True,
+                alpha=0.5,
+            )
+            ax.add_patch(p)
+    ax.imshow(out_image)
+    return ax
+
+
+def draw_segmentation_multilabel(
+    img: Union[np.ndarray, Image.Image],
+    probs: np.ndarray,
+    idx_name_dict: Dict[int, str],
+    min_conf: float,
+    colors: List = None,
+    title: str = "",
+    ax: plt.Axes = None,
+    figsize: Tuple[int, int] = (16, 8),
+):
+    """draw the result from a segmentation model
+
+    Args:
+        img (Union[np.ndarray, Image.Image]): an PIL image or a numpy array
+        probs (np.ndarray): a probability tensor of shape (n_classes, H, W)
+        idx_name_dict (Dict[int, str]):
+        min_conf (float): the min confidence of the mask given as output
+        colors (List, optional): the colors to diplay categories. Defaults to None.
+        title (str, optional): [description]. Defaults to ''.
+        ax (plt.Axes, optional): [description]. Defaults to None.
+        figsize (Tuple[int, int], optional): [description]. Defaults to (16, 8).
+
+    Returns:
+        [plt.Axes]: the ax of the given plot
+    """
+    if colors is None:
+        colors = generate_colormap(len(idx_name_dict) + 1)
+
+    if ax is None:
+        _, ax = plt.subplots(figsize=figsize)
+
+    if isinstance(img, np.ndarray):
+        img = Image.fromarray(img)
+
+    width, height = img.size
+    ax.set_ylim(height + 10, -10)
+    ax.set_xlim(-10, width + 10)
+    ax.axis("off")
+    ax.set_title(title)
+
+    out_image = np.array(img).astype(np.uint8)
+
+    for cat in range(len(probs)):
+        bool_mask = probs[cat] >= min_conf
+        conf_mask = probs[cat][bool_mask]
+        if len(conf_mask):
+            conf = np.median(conf_mask)
+        else:
+            conf = 0
+
+        if conf < min_conf:
+            continue
+
+        name = f"{idx_name_dict[cat]} {int(conf * 100)}%"
+        color = colors[cat]
+
+        # draw text in the center (defined by median) when box is not drawn
+        # median is less sensitive to outliers.
+        text_pos = np.median(bool_mask.nonzero(), axis=1)[::-1] - 20
+        # horiz_align = "left"
+
+        lighter_color = change_color_brightness(color, brightness_factor=0.7)
+        font_size = 10
+        draw_text(ax, name, text_pos, font_size, horizontal_alignment="left")
+
+        padded_mask = np.zeros(
+            (bool_mask.shape[0] + 2, bool_mask.shape[1] + 2), dtype=np.uint8
+        )
+        padded_mask[1:-1, 1:-1] = bool_mask
         contours = measure.find_contours(padded_mask, 0.5)
         for verts in contours:
             verts = np.fliplr(verts) - 1

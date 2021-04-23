@@ -1,3 +1,3 @@
-from .coco import CocoDataset
-from .semanticcoco import SemanticCoco, SemanticCocoDataset
+from .coco import CocoDataset, MaskMode
 from .instancecoco import InstanceCoco
+from .semanticcoco import SemanticCoco, SemanticCocoDataset

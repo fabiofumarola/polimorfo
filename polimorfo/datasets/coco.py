@@ -4,6 +4,7 @@ import logging
 import shutil
 from collections import defaultdict
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import DefaultDict, Dict, List, Set, Tuple, Union
 
@@ -11,7 +12,6 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from deprecated import deprecated
 from PIL import Image
 from tqdm import tqdm
 
@@ -20,6 +20,11 @@ from ..utils import maskutils, visualizeutils
 log = logging.getLogger(__name__)
 
 __all__ = ["CocoDataset"]
+
+
+class MaskMode(Enum):
+    MULTICLASS = 1
+    MULTILABEL = 2
 
 
 class CocoDataset:
@@ -488,8 +493,8 @@ class CocoDataset:
         cats_idx: List[int] = None,
         remapping_dict: Dict[int, int] = None,
         min_conf: float = 0.5,
-        ignore_index: int = 255,
         min_num_annotations: int = None,
+        mode: MaskMode = MaskMode.MULTICLASS,
     ) -> Tuple[Path, Path]:
         """Save images and segmentation mask into folders:
             * segments
@@ -531,13 +536,22 @@ class CocoDataset:
                 shutil.copy(src_img_path, dst_imag_path)
 
             name = ".".join(Path(img_meta["file_name"]).name.split(".")[:-1])
-            segm_path = segments_path / (name + ".png")
-            if segm_path.exists():
-                continue
-            segm_img, avg_score = self.get_segmentation_mask(
-                img_idx, cats_idx, remapping_dict, min_conf, ignore_index
-            )
-            segm_img.save(segm_path)
+            if mode is MaskMode.MULTICLASS:
+                segm_path = segments_path / (name + ".png")
+                if segm_path.exists():
+                    continue
+                segm_img, avg_score = self.get_segmentation_mask(
+                    img_idx, cats_idx, remapping_dict, min_conf
+                )
+                segm_img.save(segm_path)
+            elif mode is MaskMode.MULTILABEL:
+                segm_path = segments_path / (name + ".npy")
+                if segm_path.exists():
+                    continue
+                segm_img, avg_score = self.get_segmentation_mask(
+                    img_idx, cats_idx, remapping_dict, min_conf
+                )
+                np.save(segm_path, segm_img)
             scores.append(f"{segm_path.name},{avg_score}\n")
 
         cat_idx_dict = dict()
@@ -558,7 +572,7 @@ class CocoDataset:
         cats_idx: List[int] = None,
         remapping_dict: Dict[int, int] = None,
         min_conf: float = 0.5,
-        ignore_index: int = 255,
+        mode: MaskMode = MaskMode.MULTICLASS,
     ) -> None:
         """save the segmentation mask for the given dataset
 
@@ -567,7 +581,7 @@ class CocoDataset:
             cats_idx (List[int], optional): [an optional filter over the classes]. Defaults to None.
             remapping_dict (Dict[int, int], optional): a remapping dictionary for the index to save. Defaults to None.
             min_conf (float): the min confidence to generate the segment, segments with conf below the threshold are replaced as 255
-            ignore_index (int): the value used to replace segments with confidence below min_conf
+            mode: (MaskMode): the mode to save the mask if multiclass are saved as png else as npy file
         """
         if path is None:
             path = self.__image_folder.parent / "segments"
@@ -581,13 +595,24 @@ class CocoDataset:
             disable=not self.verbose,
         ):
             name = ".".join(Path(img_meta["file_name"]).name.split(".")[:-1])
-            segm_path = path / (name + ".png")
-            if segm_path.exists():
-                continue
-            segm_img, _ = self.get_segmentation_mask(
-                img_idx, cats_idx, remapping_dict, min_conf, ignore_index
-            )
-            segm_img.save(segm_path)
+            if mode is MaskMode.MULTICLASS:
+                segm_path = path / (name + ".png")
+                if segm_path.exists():
+                    continue
+
+                segm_img, _ = self.get_segmentation_mask(
+                    img_idx, cats_idx, remapping_dict, min_conf
+                )
+                segm_img.save(segm_path)
+            elif mode is MaskMode.MULTILABEL:
+                segm_path = path / (name + ".npy")
+                if segm_path.exists():
+                    continue
+
+                segm_img, _ = self.get_segmentation_mask(
+                    img_idx, cats_idx, remapping_dict, min_conf
+                )
+                np.save(segm_path, segm_img)
 
         cat_idx_dict = dict()
         for idx, cat in self.cats.items():
@@ -614,13 +639,52 @@ class CocoDataset:
         self.cats = dict(sorted(self.cats.items(), key=lambda x: x[0]))
         self.index = Index(self)
 
+    def get_segmentation_mask_multilabel(
+        self,
+        img_idx: int,
+        cats_idx: List[int] = None,
+        remapping_dict: Dict[int, int] = None,
+        min_conf: float = 0.5,
+    ) -> Tuple[np.ndarray, float]:
+        """get a segmentation mask for multilabel task with shape [C, H, W]
+
+        Args:
+            img_idx (int): [description]
+            cats_idx (List[int], optional): [description]. Defaults to None.
+            remapping_dict (Dict[int, int], optional): [description]. Defaults to None.
+            min_conf (float, optional): [description]. Defaults to 0.5.
+
+        Returns:
+            Tuple[np.np.ndarray, float]: [description]
+        """
+        img_meta = self.imgs[img_idx]
+        height, width = img_meta["height"], img_meta["width"]
+        anns = self.get_annotations(img_idx, cats_idx)
+        n_classes = len(self.cats)
+        target_image = np.zeros((n_classes, height, width), dtype=np.uint8)
+
+        for ann in anns:
+            # fiter by score
+            score = ann["score"] if "score" in ann else 1.0
+            if score < min_conf:
+                continue
+
+            cat_idx = ann["category_id"]
+            if remapping_dict is not None and cat_idx in remapping_dict:
+                cat_idx = remapping_dict[cat_idx]
+            cat_mask = maskutils.coco_poygons_to_mask(
+                [ann["segmentation"]], height, width
+            ).astype(np.bool8)
+            target_image[cat_idx][cat_mask] = 1
+
+        return target_image, 1
+
     def get_segmentation_mask(
         self,
         img_idx: int,
         cats_idx: List[int] = None,
         remapping_dict: Dict[int, int] = None,
         min_conf: float = 0.5,
-        ignore_index: int = 255,
     ) -> Tuple[Image.Image, float]:
         """generate a mask and weight for the given image idx
 
@@ -660,14 +724,13 @@ class CocoDataset:
             elements = sorted(elements, key=lambda x: x["area"], reverse=True)
             for elem in elements:
                 if elem["score"] < min_conf:
-                    target_image[elem["mask"] == 1] = ignore_index
+                    continue
+                score += elem["score"]
+                count += 1
+                if remapping_dict is not None and elem["id"] in remapping_dict:
+                    target_image[elem["mask"] == 1] = remapping_dict[elem["id"]]
                 else:
-                    score += elem["score"]
-                    count += 1
-                    if remapping_dict is not None and elem["id"] in remapping_dict:
-                        target_image[elem["mask"] == 1] = remapping_dict[elem["id"]]
-                    else:
-                        target_image[elem["mask"] == 1] = elem["id"]
+                    target_image[elem["mask"] == 1] = elem["id"]
 
         target = Image.fromarray(target_image)
         avg_score = score / count if count else count
@@ -910,6 +973,7 @@ class CocoDataset:
         cats_idx: List[int] = None,
         color_border_only: bool = False,
         line_width: int = 2,
+        font_size: int = 10,
     ) -> plt.Axes:
         """show an image with its annotations
 
@@ -926,7 +990,8 @@ class CocoDataset:
             show_masks (bool, optional): [description]. Defaults to True.
             min_score (float, optional): [description]. Defaults to 0.5.
             cats_idx (List, optional): the list of categories to show. Defaults to None to display all the categories
-            color_border_only (bool, optional): if True color only the border of the component. Defaults to False
+            color_border_only (bool, optional): if True color only the border of the component. Defaults to False,
+            font_size (int, optional): the font size default is 10
 
         Returns:
             plt.Axes: [description]
@@ -1008,6 +1073,7 @@ class CocoDataset:
             box_type=visualizeutils.BoxType.xywh,
             color_border_only=color_border_only,
             line_width=line_width,
+            font_size=font_size,
         )
 
         return ax
@@ -1024,6 +1090,7 @@ class CocoDataset:
         cats_idx: List[int] = None,
         color_border_only: bool = False,
         line_width: int = 2,
+        font_size: int = 10,
     ) -> plt.Figure:
         """show the images with their annotations
 
@@ -1071,6 +1138,7 @@ class CocoDataset:
                 cats_idx=cats_idx,
                 color_border_only=color_border_only,
                 line_width=line_width,
+                font_size=font_size,
             )
 
         return fig
