@@ -9,7 +9,7 @@ from PIL import Image
 from pytest import fixture
 from tqdm import tqdm
 
-from polimorfo.datasets import CocoDataset
+from polimorfo.datasets import CocoDataset, MaskMode
 
 BASE_PATH = Path(__file__).parent.parent / "data"
 
@@ -82,6 +82,17 @@ def test_save_images_and_masks(coco_test):
     images_path, masks_path = coco_test.save_images_and_masks(out_path, [23], {23: 24})
     # assert len(list(images_path.glob("*.jpg"))) > 0
     assert len(list(masks_path.glob("*.png"))) > 0
+    # assert len(list(images_path.glob("*.jpg"))) == len(list(masks_path.glob("*.png")))
+    shutil.rmtree(out_path.as_posix())
+
+
+def test_save_images_and_masks_multilabel(coco_test):
+    out_path = BASE_PATH / "saved_images_masks"
+    images_path, masks_path = coco_test.save_images_and_masks(
+        out_path, [23], {23: 24}, mode=MaskMode.MULTILABEL
+    )
+    # assert len(list(images_path.glob("*.jpg"))) > 0
+    assert len(list(masks_path.glob("*.npy"))) > 0
     # assert len(list(images_path.glob("*.jpg"))) == len(list(masks_path.glob("*.png")))
     shutil.rmtree(out_path.as_posix())
 
