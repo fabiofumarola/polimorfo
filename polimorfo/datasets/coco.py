@@ -536,7 +536,6 @@ class CocoDataset:
                 shutil.copy(src_img_path, dst_imag_path)
 
             name = ".".join(Path(img_meta["file_name"]).name.split(".")[:-1])
-            print(mode, mode is MaskMode.MULTICLASS, mode is MaskMode.MULTILABEL)
             if mode is MaskMode.MULTICLASS:
                 segm_path = segments_path / (name + ".png")
                 if segm_path.exists():
