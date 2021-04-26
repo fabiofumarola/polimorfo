@@ -548,7 +548,7 @@ class CocoDataset:
                 segm_path = segments_path / (name + ".npy")
                 if segm_path.exists():
                     continue
-                segm_img, avg_score = self.get_segmentation_mask(
+                segm_img, avg_score = self.get_segmentation_mask_multilabel(
                     img_idx, cats_idx, remapping_dict, min_conf
                 )
                 np.save(segm_path, segm_img)
@@ -672,9 +672,11 @@ class CocoDataset:
             cat_idx = ann["category_id"]
             if remapping_dict is not None and cat_idx in remapping_dict:
                 cat_idx = remapping_dict[cat_idx]
-            cat_mask = maskutils.coco_poygons_to_mask(
-                [ann["segmentation"]], height, width
-            ).astype(np.bool8)
+            cat_mask = (
+                maskutils.coco_poygons_to_mask([ann["segmentation"]], height, width)
+                .astype(np.bool8)
+                .squeeze(0)
+            )
             target_image[cat_idx][cat_mask] = 1
 
         return target_image, 1
