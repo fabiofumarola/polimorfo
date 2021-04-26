@@ -661,7 +661,7 @@ class CocoDataset:
         height, width = img_meta["height"], img_meta["width"]
         anns = self.get_annotations(img_idx, cats_idx)
         n_classes = len(self.cats)
-        target_image = np.zeros((n_classes, height, width), dtype=np.uint8)
+        target_image = np.zeros((height, width, n_classes), dtype=np.uint8)
 
         for ann in anns:
             # fiter by score
@@ -677,7 +677,7 @@ class CocoDataset:
                 .astype(np.bool8)
                 .squeeze(0)
             )
-            target_image[cat_idx - 1][cat_mask] = 1
+            target_image[cat_mask][cat_idx - 1] = 1
 
         return target_image, 1
 
