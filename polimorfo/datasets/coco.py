@@ -677,7 +677,7 @@ class CocoDataset:
                 .astype(np.bool8)
                 .squeeze(0)
             )
-            target_image[cat_mask][cat_idx - 1] = 1
+            target_image[cat_mask, cat_idx - 1] = 1
 
         return target_image, 1
 
