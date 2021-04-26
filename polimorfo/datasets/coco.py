@@ -609,7 +609,7 @@ class CocoDataset:
                 if segm_path.exists():
                     continue
 
-                segm_img, _ = self.get_segmentation_mask(
+                segm_img, _ = self.get_segmentation_mask_multilabel(
                     img_idx, cats_idx, remapping_dict, min_conf
                 )
                 np.save(segm_path, segm_img)
@@ -663,6 +663,11 @@ class CocoDataset:
         n_classes = len(self.cats)
         target_image = np.zeros((n_classes, height, width), dtype=np.uint8)
 
+        if self.cats[0] == 1:
+            one_based = 1
+        else:
+            one_based = 0
+
         for ann in anns:
             # fiter by score
             score = ann["score"] if "score" in ann else 1.0
@@ -677,7 +682,7 @@ class CocoDataset:
                 .astype(np.bool8)
                 .squeeze(0)
             )
-            target_image[cat_idx][cat_mask] = 1
+            target_image[cat_idx - one_based][cat_mask] = 1
 
         return target_image, 1
 
