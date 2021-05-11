@@ -243,6 +243,48 @@ class SemanticCoco(CocoDataset):
 
         return annotation_ids
 
+    def add_annotations_multilabel(
+        self,
+        img_id: int,
+        probs: np.ndarray,
+        min_conf: float,
+        approx: float = 0.005,
+        relative: bool = True,
+    ) -> List[int]:
+        annotation_ids = []
+        for cat_idx in range(len(probs)):
+            cat_probs = probs[cat_idx]
+
+            # transform the mask to polygons
+            class_polygons = maskutils.mask_to_polygon(
+                cat_probs, min_score=0.5, approx=approx, relative=relative
+            )
+
+            # for each polyong in polygons
+            for poly in class_polygons:
+
+                poly_mask = maskutils.polygons_to_mask(
+                    [poly], probs.shape[1], probs.shape[2]
+                )
+                poly_mask_prob = poly_mask * cat_probs
+                prob_values = poly_mask_prob[poly_mask_prob > 0]
+                median_conf = float(np.median(prob_values))
+                if median_conf < min_conf:
+                    continue
+
+                bbox = maskutils.bbox_from_mask(poly_mask)
+                if bbox[0] is None:
+                    continue
+
+                area = int(maskutils.area(poly_mask))
+                annotation_ids.append(
+                    self.add_annotation(
+                        img_id, int(cat_idx), [poly], area, bbox, 0, median_conf
+                    )
+                )
+
+        return annotation_ids
+
 
 @deprecated(version="0.9.34", reason="you should use SemanticCoco")
 class SemanticCocoDataset(SemanticCoco):
