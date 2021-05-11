@@ -279,7 +279,7 @@ class SemanticCoco(CocoDataset):
                 area = int(maskutils.area(poly_mask))
                 annotation_ids.append(
                     self.add_annotation(
-                        img_id, int(cat_idx), [poly], area, bbox, 0, median_conf
+                        img_id, int(cat_idx) + 1, [poly], area, bbox, 0, median_conf
                     )
                 )
 
