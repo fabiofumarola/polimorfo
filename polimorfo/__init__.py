@@ -2,5 +2,5 @@
 
 __author__ = """Fabio Fumarola"""
 __email__ = "fabiofumarola@gmail.com"
-__version__ = "__version__ = '0.10.13'"
+__version__ = "__version__ = '0.10.14'"
 __cache_dir__ = "~/.polimorfo"
