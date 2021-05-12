@@ -536,7 +536,8 @@ class CocoDataset:
                 shutil.copy(src_img_path, dst_imag_path)
 
             name = ".".join(Path(img_meta["file_name"]).name.split(".")[:-1])
-            if mode is MaskMode.MULTICLASS:
+
+            if mode.value is MaskMode.MULTICLASS.value:
                 segm_path = segments_path / (name + ".png")
                 if segm_path.exists():
                     continue
@@ -544,7 +545,7 @@ class CocoDataset:
                     img_idx, cats_idx, remapping_dict, min_conf
                 )
                 segm_img.save(segm_path)
-            elif mode is MaskMode.MULTILABEL:
+            elif mode.value is MaskMode.MULTILABEL.value:
                 segm_path = segments_path / (name + ".npy")
                 if segm_path.exists():
                     continue
