@@ -532,7 +532,7 @@ class CocoDataset:
 
             src_img_path = self.__image_folder / img_meta["file_name"]
             dst_imag_path = images_path / img_meta["file_name"]
-            if src_img_path.exists() and (not dst_imag_path.exist()):
+            if src_img_path.exists() and (not dst_imag_path.exists()):
                 shutil.copy(src_img_path, dst_imag_path)
 
             name = ".".join(Path(img_meta["file_name"]).name.split(".")[:-1])
