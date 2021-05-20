@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from PIL import Image
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from ..utils import maskutils, visualizeutils
 
@@ -1094,6 +1094,7 @@ class CocoDataset:
         color_border_only: bool = False,
         line_width: int = 2,
         font_size: int = 10,
+        colors=None,
     ) -> plt.Figure:
         """show the images with their annotations
 
@@ -1125,7 +1126,8 @@ class CocoDataset:
         gs.update(wspace=0.025, hspace=0.05)  # set the spacing between axes.
 
         class_name_dict = {idx: cat["name"] for idx, cat in self.cats.items()}
-        colors = visualizeutils.generate_colormap(len(class_name_dict) + 1)
+        if colors is None:
+            colors = visualizeutils.generate_colormap(len(class_name_dict) + 1)
 
         for i, img_idx in enumerate(img_idxs):
             ax = plt.subplot(gs[i])
@@ -1145,49 +1147,6 @@ class CocoDataset:
             )
 
         return fig
-
-    def split(self, train_perc, val_perc, test_perc=None) -> Tuple:
-        """split the dataset
-
-        Args:
-            train_perc ([type]): [description]
-            val_perc ([type]): [description]
-            test_perc ([type], optional): [description]. Defaults to None.
-
-        Raises:
-            ValueError: [description]
-
-        Returns:
-            Tuple: [description]
-        """
-        if test_perc is None:
-            test_perc = 1 - (train_perc + val_perc)
-        if not int(train_perc + val_perc + test_perc) == 1:
-            raise ValueError(
-                "the sum of train val and test percentage is not equal to 1"
-            )
-
-        train_end = int(len(self.imgs) * train_perc)
-        val_end = int(len(self.imgs) * (train_perc + val_perc))
-        test_perc = int(len(self.imgs) * (train_perc + val_perc + test_perc))
-
-        train_img_ids = list(self.imgs.keys())[:train_end]
-        val_img_ids = list(self.imgs.keys())[train_end:val_end]
-        test_img_ids = list(self.imgs.keys())[val_end:]
-
-        train_ds = self.copy()
-        train_ds.remove_images(val_img_ids + test_img_ids)
-        train_ds.reindex()
-
-        val_ds = self.copy()
-        val_ds.remove_images(train_img_ids + test_img_ids)
-        train_ds.reindex()
-
-        test_ds = self.copy()
-        test_ds.remove_images(train_img_ids + val_img_ids)
-        train_ds.reindex()
-
-        return train_ds, val_ds, test_ds
 
 
 class Index(object):

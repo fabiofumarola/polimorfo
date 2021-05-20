@@ -64,7 +64,7 @@ def merge_datasets(
 
     # initializize merged dataset
     out_ds = CocoDataset(dest_path)
-    for idx, cat_name in sorted(merged_idx_to_cat.items()):
+    for _, cat_name in sorted(merged_idx_to_cat.items()):
         out_ds.add_category(cat_name, "thing")
 
     for ds_item, cat_map_item in zip(datasets, cat_map):
