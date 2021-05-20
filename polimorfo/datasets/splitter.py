@@ -50,7 +50,7 @@ class Splitter:
 
         X_train_set = set(X_train.flatten().tolist())
         X_val_set = set(X_val.flatten().tolist())
-        X_test_set = set(X_test.flatten().tolist()) if X_test else set()
+        X_test_set = set(X_test.flatten().tolist()) if X_test is not None else set()
 
         split_content = []
         for img_idx, img_meta in ds.imgs.items():
