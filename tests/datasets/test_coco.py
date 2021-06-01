@@ -97,7 +97,7 @@ def test_save_images_and_masks_multilabel(coco_test):
 
     # check the first shape contains the number of classes
     m = np.load(list(masks_path.glob("*.npy"))[0])
-    assert m.shape[0] == 3
+    assert m.shape[-1] == 3
 
     # assert len(list(images_path.glob("*.jpg"))) == len(list(masks_path.glob("*.png")))
     shutil.rmtree(out_path.as_posix())
@@ -160,20 +160,6 @@ def test_remove_categories_and_annotations():
     ds.remove_categories([cat_id])
 
     assert len(ds.cats) == 0
-
-
-def test_create_split(coco_test):
-    train, val, test = coco_test.split(0.8, 0.1)
-    assert len(train) > 0
-    assert len(val) > 0
-    assert len(test) > 0
-
-
-def test_create_split_notest(coco_test: CocoDataset):
-    train, val, test = coco_test.split(0.8, 0.3)
-    assert len(train) > 0
-    assert len(val) > 0
-    assert len(test) == 0
 
 
 def test_copy(coco_test: CocoDataset):
