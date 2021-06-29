@@ -1035,7 +1035,7 @@ class CocoDataset:
         for ann in anns:
             boxes.append(ann["bbox"])
             labels.append(ann["category_id"])
-            if "segmentation" in ann:
+            if "segmentation" in ann and ann["segmentation"] is not None:
                 mask = maskutils.polygons_to_mask(
                     ann["segmentation"], img.height, img.width
                 )
@@ -1147,6 +1147,9 @@ class CocoDataset:
             )
 
         return fig
+
+    def make_index(self):
+        self.index = Index(self)
 
 
 class Index(object):

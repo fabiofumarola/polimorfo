@@ -71,7 +71,7 @@ def polygons_to_mask(polygons, height, width):
 
 def area(mask, min_score=0.5):
     mask = (mask > min_score).astype(np.uint8)
-    return mask.sum()
+    return int(mask.sum())
 
 
 def bbox(
@@ -86,6 +86,14 @@ def bbox(
 
 
 def bbox_from_mask(mask):
+    """return the bounding box from the given mask
+
+    Args:
+        mask ([type]): [description]
+
+    Returns:
+        List: a list of format [x_min, y_min, w, hs]
+    """
     pairs = np.argwhere(mask == True)
     if len(pairs) == 0:
         return None, None, None, None

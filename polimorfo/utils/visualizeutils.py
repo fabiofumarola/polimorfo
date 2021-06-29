@@ -180,18 +180,18 @@ def draw_instances(
             mask = np.squeeze(masks[idx, ...])
         color = colors[label_id]
 
+        box = boxes[idx]
+        if box_type.value == BoxType.xyxy.value:
+            x0, y0, x1, y1 = box
+            x, y, w, h = x0, y0, x1 - x0, y1 - y0
+        else:
+            x, y, w, h = box
+
+        area = w * h
+        if area < min_area:
+            continue
+
         if show_boxes:
-            box = boxes[idx]
-            if box_type.value == BoxType.xyxy.value:
-                x0, y0, x1, y1 = box
-                x, y, w, h = x0, y0, x1 - x0, y1 - y0
-            else:
-                x, y, w, h = box
-
-            area = w * h
-            if area < min_area:
-                continue
-
             p = Rectangle(
                 (x, y),
                 w,
