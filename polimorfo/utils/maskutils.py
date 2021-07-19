@@ -13,15 +13,15 @@ __all__ = [
 
 
 def mask_to_polygon(
-    mask, min_score: float = 0.5, approx: float = 0.005, relative: bool = True
+    mask, min_score: float = 0.5, approx: float = 0.0, relative: bool = True
 ):
     """generate polygons from masks
 
     Args:
         mask (np.ndarray): a binary mask
         min_score (float, optional): [description]. Defaults to 0.5.
-        approx (float, optional): it approximate the polygons to reduce the number of points. Defaults to 0.01, that means reduce
-            the number of points by 10%.
+        approx (float, optional): it approximate the polygons to reduce the number of points. Defaults to 0.0
+        relative (bool, optional): it the value of the approximation is computed on the relative amount of point or with respect to all the points
 
     Returns:
         [type]: [description]

@@ -114,7 +114,7 @@ def draw_instances(
         boxes (np.ndarray): an array of shape (nboxes, 4)
         labels (np.ndarray): an array of shape (nlabels,)
         scores (np.ndarray): an array of shape (nscores,)
-        masks (np.ndarray): an array of shape [nmasks, 1, width, height ]
+        masks (np.ndarray): an array of shape [num_masks, width, height ]
         idx_class_dict (Dict[int, str]): a dictionary that maps class id to class name
         title (str, optional): [description]. Defaults to ''.
         figsize (Tuple, optional): [description]. Defaults to (16, 8).
