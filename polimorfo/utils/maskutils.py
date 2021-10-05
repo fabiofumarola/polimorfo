@@ -92,7 +92,7 @@ def bbox_from_mask(mask):
         mask ([type]): [description]
 
     Returns:
-        List: a list of format [x_min, y_min, w, hs]
+        List: a list of format [x_min, y_min, w, h]
     """
     pairs = np.argwhere(mask == True)
     if len(pairs) == 0:

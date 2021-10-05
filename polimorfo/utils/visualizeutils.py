@@ -64,10 +64,10 @@ def draw_text(
     color = np.maximum(list(mplc.to_rgb(color)), 0.2)
     color[np.argmax(color)] = max(0.8, np.max(color))
 
-    x, y = position
+    posx, posy = position
     ax.text(
-        x,
-        y,
+        posx,
+        posy,
         text,
         size=font_size * 1,
         family="sans-serif",
@@ -106,6 +106,9 @@ def draw_instances(
     alpha: float = 0.3,
     line_width: int = 2,
     font_size: int = 10,
+    show_text: bool = True,
+    *args,
+    **kwargs,
 ):
     """draw the instances from a object detector or an instance segmentation model
 
@@ -178,6 +181,7 @@ def draw_instances(
 
         if show_masks:
             mask = np.squeeze(masks[idx, ...])
+
         color = colors[label_id]
 
         box = boxes[idx]
@@ -190,6 +194,8 @@ def draw_instances(
         area = w * h
         if area < min_area:
             continue
+
+        lighter_color = change_color_brightness(color, brightness_factor=0.7)
 
         if show_boxes:
             p = Rectangle(
@@ -204,19 +210,16 @@ def draw_instances(
             )
             ax.add_patch(p)
 
-        # add the caption
-        # draw text in the center (defined by median) when box is not drawn
-        # median is less sensitive to outliers.
-        if show_masks:
-            text_pos = np.median(mask.nonzero(), axis=1)[::-1]
-        else:
-            text_pos = (x + 5, y + 5)
+            text_pos = (x, y)
+            if show_text:
+                draw_text(ax, label_name, text_pos, font_size, lighter_color, "left")
 
-        horiz_align = "left"
-
-        lighter_color = change_color_brightness(color, brightness_factor=0.7)
-        draw_text(ax, label_name, text_pos, font_size, lighter_color, horiz_align)
         if show_masks:
+
+            text_pos = np.nanmedian(mask.nonzero(), axis=1)[::-1]
+            if np.isnan(text_pos[0]):
+                continue
+
             padded_mask = np.zeros(
                 (mask.shape[0] + 2, mask.shape[1] + 2), dtype=np.float32
             )
@@ -235,6 +238,10 @@ def draw_instances(
                     linewidth=line_width,
                 )
                 ax.add_patch(p)
+
+            if show_text:
+                draw_text(ax, label_name, text_pos, font_size, lighter_color, "left")
+
     ax.imshow(out_image)
     return ax
 
@@ -270,19 +277,22 @@ def create_text_labels(
 
 def draw_segmentation(
     img: Union[np.ndarray, Image.Image],
-    logits_or_mask: np.ndarray,
+    probs: np.ndarray,
     idx_name_dict: Dict[int, str],
     min_conf: float,
     colors: List = None,
     title: str = "",
     ax: plt.Axes = None,
     figsize: Tuple[int, int] = (16, 8),
+    alpha: float = 0.3,
+    fill: bool = True,
+    min_score: float = 0.5,
 ):
     """draw the result from a segmentation model
 
     Args:
         img (Union[np.ndarray, Image.Image]): an PIL image or a numpy array
-        logits_or_mask (np.ndarray): it accepts:
+        probs (np.ndarray): it accepts:
             - the logits coming from the model with shape (n_classes, H, W), or
             - the mask coming from true annotations with shape (H,W) and containing pixel classification
         idx_name_dict (Dict[int, str]):
@@ -312,48 +322,37 @@ def draw_segmentation(
 
     out_image = np.array(img).astype(np.uint8)
 
-    if len(logits_or_mask.shape) == 2:
-        masks = logits_or_mask
-        probs = np.ones((len(idx_name_dict), *masks.shape))
-    else:
-        probs = special.softmax(logits_or_mask, axis=0)
-        masks = probs.argmax(0)
+    for cat_idx in np.unique(probs)[1:]:
+        bool_mask = probs[cat_idx] >= min_conf
+        conf_mask = probs[cat_idx][bool_mask]
 
-    for cat in np.unique(masks)[1:]:
-        mask = masks == cat
-
-        conf = np.round(np.nan_to_num(probs[cat, mask].mean()), 2)
+        conf = np.round(np.nan_to_num(conf_mask.flatten().mean()), 2)
         if conf < min_conf:
             continue
-        # remove all the pixels with score lower
-        filt_mask = np.copy(mask)
-        filt_mask[probs[cat, ...] < min_conf] = 0
 
-        name = f"{idx_name_dict[cat]} {int(conf * 100)}%"
-        color = colors[cat]
+        name = f"{idx_name_dict[cat_idx]} {int(conf * 100)}%"
+        color = colors[cat_idx]
 
         # draw text in the center (defined by median) when box is not drawn
         # median is less sensitive to outliers.
-        text_pos = np.median(filt_mask.nonzero(), axis=1)[::-1] - 20
-        # horiz_align = "left"
-
+        text_pos = np.median(conf_mask.nonzero(), axis=1)[::-1] - 20
         lighter_color = change_color_brightness(color, brightness_factor=0.7)
         font_size = 10
         draw_text(ax, name, text_pos, font_size, horizontal_alignment="left")
 
         padded_mask = np.zeros(
-            (filt_mask.shape[0] + 2, filt_mask.shape[1] + 2), dtype=np.uint8
+            (bool_mask.shape[0] + 2, bool_mask.shape[1] + 2), dtype=np.uint8
         )
-        padded_mask[1:-1, 1:-1] = filt_mask
-        contours = measure.find_contours(padded_mask, 0.5)
+        padded_mask[1:-1, 1:-1] = bool_mask
+        contours = measure.find_contours(padded_mask, min_score)
         for verts in contours:
             verts = np.fliplr(verts) - 1
             p = Polygon(
                 verts,
                 facecolor=color,
                 edgecolor=lighter_color,  # 'black',
-                fill=True,
-                alpha=0.5,
+                fill=fill,
+                alpha=alpha,
             )
             ax.add_patch(p)
     ax.imshow(out_image)
@@ -405,7 +404,7 @@ def draw_segmentation_multilabel(
     for cat_idx in range(len(probs)):
         bool_mask = probs[cat_idx] >= min_conf
         conf_mask = probs[cat_idx][bool_mask]
-        if len(conf_mask):
+        if np.count_nonzero(conf_mask):
             conf = np.median(conf_mask)
         else:
             conf = 0
@@ -413,8 +412,8 @@ def draw_segmentation_multilabel(
         if conf < min_conf:
             continue
 
-        name = f"{idx_name_dict[cat_idx +  1]} {int(conf * 100)}%"
-        color = colors[cat_idx + 1]
+        name = f"{idx_name_dict[cat_idx]} {int(conf * 100)}%"
+        color = colors[cat_idx]
 
         # draw text in the center (defined by median) when box is not drawn
         # median is less sensitive to outliers.

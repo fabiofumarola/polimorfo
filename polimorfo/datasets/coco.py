@@ -126,6 +126,11 @@ class CocoDataset:
         return self.__image_folder
 
     def copy(self):
+        """returns a copy of the given dataset
+
+        Returns:
+            [CocoDataset]: a copy of the dataset
+        """
         new_coco = CocoDataset("fake.json", image_path=self.__image_folder.as_posix())
         new_coco.cats = copy.deepcopy(self.cats)
         new_coco.imgs = copy.deepcopy(self.imgs)
