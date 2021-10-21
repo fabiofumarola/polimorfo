@@ -1,5 +1,5 @@
 tqdm==4.59.0
-numpy==1.20.1
+numpy==1.21.3
 Pillow>=5.3.0
 matplotlib==3.3.4
 pycocotools==2.0.2
