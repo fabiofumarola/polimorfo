@@ -332,13 +332,13 @@ def draw_segmentation(
         if cat_idx == 0:
             continue
 
-        bool_mask = cats_mask == cat_idx
         if probs is not None:
             conf_mask = probs[cat_idx][bool_mask]
+            bool_mask = probs[cat_idx] >= min_conf
         else:
             conf_mask = np.array([1])
+            bool_mask = cats_mask == cat_idx
 
-        bool_mask = probs[cat_idx] >= min_conf
         conf = np.round(np.nan_to_num(conf_mask.flatten().mean()), 2)
         if conf < min_conf:
             continue
