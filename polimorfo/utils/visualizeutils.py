@@ -350,7 +350,7 @@ def draw_segmentation(
 
         # draw text in the center (defined by median) when box is not drawn
         # median is less sensitive to outliers.
-        text_pos = np.median(conf_mask.nonzero(), axis=1)[::-1] - 20
+        text_pos = np.median(bool_mask.nonzero(), axis=1)[::-1] - 20
         lighter_color = change_color_brightness(color, brightness_factor=0.7)
         font_size = 10
         draw_text(ax, name, text_pos, font_size, horizontal_alignment="left")
