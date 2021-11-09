@@ -322,7 +322,22 @@ def draw_segmentation(
 
     out_image = np.array(img).astype(np.uint8)
 
-    for cat_idx in np.unique(probs)[1:]:
+    if len(probs.shape) == 3:
+        cats_mask = probs.argmax(0)
+    else:
+        cats_mask = probs
+        probs = None
+
+    for cat_idx in np.unique(cats_mask):
+        if cat_idx == 0:
+            continue
+
+        bool_mask = cats_mask == cat_idx
+        if probs is not None:
+            conf_mask = probs[cat_idx][bool_mask]
+        else:
+            conf_mask = np.array([1])
+
         bool_mask = probs[cat_idx] >= min_conf
         conf_mask = probs[cat_idx][bool_mask]
 
