@@ -1,4 +1,4 @@
-tqdm==4.59.0
+tqdm==4.62.3
 numpy==1.20.1
 Pillow>=5.3.0
 matplotlib==3.4.3
@@ -8,3 +8,4 @@ Deprecated==1.2.11
 scikit-multilearn==0.2.0
 scikit-image>=0.18.1
 scipy>=1.6.3
+scikit-learn>=0.19.2
