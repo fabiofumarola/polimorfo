@@ -11,7 +11,6 @@ from typing import DefaultDict, Dict, List, Set, Tuple, Union
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from PIL import Image
 from tqdm.auto import tqdm
 
