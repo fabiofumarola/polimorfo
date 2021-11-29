@@ -1155,6 +1155,22 @@ class CocoDataset:
     def make_index(self):
         self.index = Index(self)
 
+    def get_cvat_categories(self):
+        """Returns a list of category names compatible for CVAT project definition.
+
+        In order to correctly defina labels on CVAT combine this method with `json` to copy and paste values in the interface.
+
+        Example:
+
+        > import json
+        > json.dumps(ds.get_cvat_categories())
+        """
+        cvat_cats = []
+        for cat_meta in self.cats.values():
+            cvat_cats.append({"name": cat_meta["name"],
+                            "color": "",
+                            "attributes": []})        
+        return cvat_cats
 
 class Index(object):
     def __init__(self, coco: CocoDataset) -> None:
