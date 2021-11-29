@@ -9,7 +9,7 @@ from PIL import Image
 from pytest import fixture
 from tqdm import tqdm
 
-from polimorfo.datasets import CocoDataset, MaskMode, coco
+from polimorfo.datasets import CocoDataset, MaskMode
 
 BASE_PATH = Path(__file__).parent.parent / "data"
 
