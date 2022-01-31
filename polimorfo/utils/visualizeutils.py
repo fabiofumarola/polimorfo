@@ -426,7 +426,7 @@ def draw_segmentation_multilabel(
         if conf < min_conf:
             continue
 
-        name = f"{idx_name_dict[cat_idx]} {int(conf * 100)}%"
+        name = f"{idx_name_dict[cat_idx + 1]} {int(conf * 100)}%"
         color = colors[cat_idx]
 
         # draw text in the center (defined by median) when box is not drawn
