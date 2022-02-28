@@ -1,4 +1,4 @@
-tqdm==4.62.3
+tqdm==4.63.0
 numpy==1.20.1
 Pillow>=5.3.0
 matplotlib==3.4.3
