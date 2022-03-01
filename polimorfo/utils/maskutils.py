@@ -29,7 +29,7 @@ def mask_to_polygon(
     mask = (mask > min_score).astype(np.uint8)
     mask = cv2.copyMakeBorder(mask, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
     contours, hierarchy = cv2.findContours(
-        mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE, offset=(-1, -1)
+        mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE, offset=(-1, -1)
     )
     polygons = []
     for cnt in contours:
