@@ -3,7 +3,7 @@ numpy==1.22.2
 pycocotools==2.0.4
 Pillow>=5.3.0
 matplotlib>=3.4.3
-opencv-python==4.5.5.62
+opencv-python==4.5.5.64
 Deprecated==1.2.13
 scikit-multilearn==0.2.0
 scikit-image>=0.19.2
