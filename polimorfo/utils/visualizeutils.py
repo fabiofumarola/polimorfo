@@ -414,7 +414,7 @@ def draw_segmentation_multilabel(
 
     out_image = np.array(img).astype(np.uint8)
 
-    for cat_idx in range(1, len(probs) + 1):
+    for cat_idx in range(len(probs)):
         bool_mask = probs[cat_idx] >= min_conf
         conf_mask = probs[cat_idx][bool_mask]
         if np.count_nonzero(conf_mask):
@@ -425,7 +425,7 @@ def draw_segmentation_multilabel(
         if conf < min_conf:
             continue
 
-        name = f"{idx_name_dict[cat_idx]} {int(conf * 100)}%"
+        name = f"{idx_name_dict[cat_idx +1]} {int(conf * 100)}%"
         color = colors[cat_idx]
 
         # draw text in the center (defined by median) when box is not drawn
