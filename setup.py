@@ -48,6 +48,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/fabiofumarola/polimorfo",
-    version="0.10.31",
+    version="0.10.32",
     zip_safe=False,
 )
