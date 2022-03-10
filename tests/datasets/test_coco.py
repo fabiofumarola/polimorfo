@@ -183,3 +183,10 @@ def test_get_annotations_for_image(coco_test: CocoDataset):
     anns = coco_test.get_annotations(img_idx)
     assert isinstance(anns, list)
     assert len(anns) == 0
+
+def test_get_cvat_categories(coco_test: CocoDataset):
+    coco_test.reindex()
+    expected = [{'name': 'bear', 'color': '', 'attributes': []}, {'name': 'toaster', 'color': '', 'attributes': []}, {'name': 'hair drier', 'color': '', 'attributes': []}]
+    cvat_categories = coco_test.get_cvat_categories()
+    assert cvat_categories == expected
+
