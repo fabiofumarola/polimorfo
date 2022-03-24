@@ -1167,10 +1167,9 @@ class CocoDataset:
         """
         cvat_cats = []
         for cat_meta in self.cats.values():
-            cvat_cats.append({"name": cat_meta["name"],
-                            "color": "",
-                            "attributes": []})        
+            cvat_cats.append({"name": cat_meta["name"], "color": "", "attributes": []})
         return cvat_cats
+
 
 class Index(object):
     def __init__(self, coco: CocoDataset) -> None:
